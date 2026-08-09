@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #ffd400;
+  --primary-2: #ff9d00;
+  --ink: #14110a;
+  --text: #f3f1ea;
+  --muted: #9a958a;
+  --bg: #0a0a08;
+  --surface: #17150f;
+  --glass-border: rgba(255, 212, 0, 0.12);
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-2: var(--primary-2);
+  --color-ink: var(--ink);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-glass-border: var(--glass-border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  color: var(--text);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255, 212, 0, 0.16), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 15%, rgba(255, 157, 0, 0.09), transparent 55%),
+    radial-gradient(ellipse 800px 600px at 10% 110%, rgba(255, 212, 0, 0.07), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* body is a column flex container (see layout.tsx); flex items default to
+   min-width:auto, so a wide descendant (e.g. an admin table) can silently
+   push its own intrinsic width past the viewport even with overflow-x-auto
+   set on an inner wrapper. Force flex items to allow shrinking below their
+   content's natural width so per-element overflow-x-auto containers work. */
+body > * {
+  min-width: 0;
+  width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
