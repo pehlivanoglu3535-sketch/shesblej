@@ -37,8 +37,8 @@ export default function Header({
   return (
     <header className="sticky top-0 z-50 border-b border-glass-border bg-[rgba(10,10,8,0.75)] backdrop-blur-2xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
-        <Link href="/" className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight">
-          <Image src="/logo.png" alt="" width={44} height={44} className="rounded-xl" priority />
+        <Link href="/" className="flex items-center gap-1.5 text-3xl font-extrabold tracking-tight">
+          <Image src="/logo.png" alt="" width={56} height={56} priority className="-mr-0.5" />
           <span className="bg-gradient-to-br from-primary to-primary-2 bg-clip-text text-transparent">
             ShesBlej
           </span>
@@ -73,7 +73,6 @@ export default function Header({
         </select>
 
         <nav className="hidden items-center gap-3 text-sm font-semibold text-[#cbc6ba] lg:flex">
-          <Link href="/packages" className="hover:text-white">{t('nav_packages', lang)}</Link>
           <Link href="/gallery" className="hover:text-white">{t('nav_gallery', lang)}</Link>
           <Link href="/blog" className="hover:text-white">{t('nav_blog', lang)}</Link>
           {userName && (

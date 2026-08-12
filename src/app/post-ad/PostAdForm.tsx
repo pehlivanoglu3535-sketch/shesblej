@@ -1,18 +1,16 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import Link from 'next/link';
 import { createListingAction, updateListingAction, type PostAdState } from './actions';
 import { CATEGORIES, CITIES, CITY_COORDS, MAX_PHOTOS, CAR_BRANDS, type CategoryId } from '@/lib/constants';
 import { t, catName, subName, type LangCode } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/client';
 import type { Listing } from '@/lib/listings';
 import type { CurrentUser } from '@/lib/get-user';
-import { showcaseLimit } from '@/lib/plan';
 
 const STEP_KEYS = ['step_category', 'step_details', 'step_location', 'step_contact'] as const;
 
-export default function PostAdForm({ lang, listing, user }: { lang: LangCode; listing?: Listing; user: CurrentUser }) {
+export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?: Listing; user: CurrentUser }) {
   const isEdit = !!listing;
   const boundAction = isEdit
     ? updateListingAction.bind(null, lang, listing.id)
@@ -34,13 +32,9 @@ export default function PostAdForm({ lang, listing, user }: { lang: LangCode; li
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [brand, setBrand] = useState(listing?.brand ?? '');
-  const [wantsUrgent, setWantsUrgent] = useState(false);
-  const [wantsHighlight, setWantsHighlight] = useState(false);
-  const [wantsShowcase, setWantsShowcase] = useState(false);
 
   const cat = CATEGORIES.find((c) => c.id === category)!;
   const isEmlak = category === 'emlak';
-  const showcaseAvailable = showcaseLimit(user);
 
   function onMapClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -181,9 +175,6 @@ export default function PostAdForm({ lang, listing, user }: { lang: LangCode; li
           <input type="hidden" name="mapLat" value={latLng ? String(latLng.lat) : ''} />
           <input type="hidden" name="mapLng" value={latLng ? String(latLng.lng) : ''} />
           <input type="hidden" name="photos" value={JSON.stringify(photos)} />
-          <input type="hidden" name="wantsUrgent" value={wantsUrgent ? '1' : '0'} />
-          <input type="hidden" name="wantsHighlight" value={wantsHighlight ? '1' : '0'} />
-          <input type="hidden" name="wantsShowcase" value={wantsShowcase ? '1' : '0'} />
 
           <div className={step === 1 ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_category', lang)}>
@@ -358,32 +349,6 @@ export default function PostAdForm({ lang, listing, user }: { lang: LangCode; li
                 />
               </Field>
               <p className="text-xs text-muted">{t('post_ad_expiry_hint', lang)}</p>
-
-              {!isEdit && (
-                <div className="space-y-2 rounded-lg border border-glass-border bg-white/4 p-3">
-                  <BadgeCheckbox
-                    checked={wantsUrgent}
-                    onChange={setWantsUrgent}
-                    credits={user.creditUrgentTag}
-                    label={t('label_urgent_tag', lang)}
-                    lang={lang}
-                  />
-                  <BadgeCheckbox
-                    checked={wantsHighlight}
-                    onChange={setWantsHighlight}
-                    credits={user.creditHighlight}
-                    label={t('label_highlight', lang)}
-                    lang={lang}
-                  />
-                  <BadgeCheckbox
-                    checked={wantsShowcase}
-                    onChange={setWantsShowcase}
-                    credits={showcaseAvailable}
-                    label={t('label_showcase', lang)}
-                    lang={lang}
-                  />
-                </div>
-              )}
           </div>
 
           <div className="mt-6 flex justify-between">
@@ -417,45 +382,6 @@ export default function PostAdForm({ lang, listing, user }: { lang: LangCode; li
         </form>
       </div>
     </main>
-  );
-}
-
-function BadgeCheckbox({
-  checked,
-  onChange,
-  credits,
-  label,
-  lang,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  credits: number;
-  label: string;
-  lang: LangCode;
-}) {
-  const disabled = credits <= 0;
-  return (
-    <label className={`flex items-center justify-between gap-2 text-sm ${disabled ? 'opacity-50' : ''}`}>
-      <span className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-          className="h-4 w-4"
-        />
-        {label}
-      </span>
-      {disabled ? (
-        <Link href="/packages" className="text-xs text-primary underline">
-          {t('nav_packages', lang)}
-        </Link>
-      ) : (
-        <span className="text-xs text-muted">
-          {credits} {t('credits_available_suffix', lang)}
-        </span>
-      )}
-    </label>
   );
 }
 
