@@ -15,35 +15,50 @@ declare global {
 
 const SUPPORTED = ['sq', 'sr', 'tr', 'en', 'de', 'fr', 'it', 'bs', 'el', 'ru'];
 
-function getCookie(name: string): string | null {
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
-}
+// Triggering the translate <select> too early races Next.js's own
+// hydration: React's reconciliation wipes Google's injected text nodes
+// if translation lands before the page has settled. Firing (and
+// re-verifying) after a delay avoids that revert.
+const FIRST_TRIGGER_DELAY_MS = 3000;
+const VERIFY_DELAY_MS = 3000;
 
 export default function GoogleTranslate({ siteLang }: { siteLang: string }) {
   useEffect(() => {
-    if (document.getElementById('google-translate-script')) return;
-
     const browserLang = navigator.language.slice(0, 2);
-    const existingCookie = getCookie('googtrans');
-    if (!existingCookie && SUPPORTED.includes(browserLang) && browserLang !== siteLang) {
-      document.cookie = `googtrans=/auto/${browserLang};path=/`;
+    const shouldAutoTranslate = SUPPORTED.includes(browserLang) && browserLang !== siteLang;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    function applyTranslation() {
+      const select = document.querySelector<HTMLSelectElement>('select.goog-te-combo');
+      if (!select) return;
+      select.value = browserLang;
+      select.dispatchEvent(new Event('change'));
     }
 
-    window.googleTranslateElementInit = () => {
-      if (window.google) {
-        new window.google.translate.TranslateElement(
-          { pageLanguage: 'auto', autoDisplay: false },
-          'google_translate_element'
-        );
-      }
-    };
+    if (shouldAutoTranslate) {
+      timers.push(setTimeout(applyTranslation, FIRST_TRIGGER_DELAY_MS));
+      // Re-apply once more in case a late hydration/render reverted the first pass.
+      timers.push(setTimeout(applyTranslation, FIRST_TRIGGER_DELAY_MS + VERIFY_DELAY_MS));
+    }
 
-    const script = document.createElement('script');
-    script.id = 'google-translate-script';
-    script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-    script.async = true;
-    document.body.appendChild(script);
+    if (!document.getElementById('google-translate-script')) {
+      window.googleTranslateElementInit = () => {
+        if (window.google) {
+          new window.google.translate.TranslateElement(
+            { pageLanguage: 'auto', autoDisplay: false },
+            'google_translate_element'
+          );
+        }
+      };
+
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    return () => timers.forEach(clearTimeout);
   }, [siteLang]);
 
   return <div id="google_translate_element" style={{ position: 'absolute', top: '-9999px', left: '-9999px' }} />;
