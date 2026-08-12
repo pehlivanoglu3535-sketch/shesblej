@@ -5,6 +5,7 @@ import { getLang } from "@/lib/get-lang";
 import { getCurrentUser } from "@/lib/get-user";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <GoogleTranslate siteLang={lang} />
         <Header lang={lang} userName={user?.name ?? null} isAdmin={user?.isAdmin ?? false} />
         {children}
         <Footer lang={lang} />

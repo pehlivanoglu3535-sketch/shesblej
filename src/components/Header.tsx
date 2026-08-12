@@ -77,6 +77,7 @@ export default function Header({
           <Link href="/blog" className="hover:text-white">{t('nav_blog', lang)}</Link>
           {userName && (
             <>
+              <Link href="/account" className="hover:text-white">{t('nav_account', lang)}</Link>
               <Link href="/my-listings" className="hover:text-white">{t('nav_my_listings', lang)}</Link>
               <Link href="/favorites" className="hover:text-white">{t('nav_my_favorites', lang)}</Link>
               <Link href="/messages" className="hover:text-white">{t('nav_my_messages', lang)}</Link>
@@ -89,7 +90,7 @@ export default function Header({
 
         {userName ? (
           <>
-            <span className="hidden text-sm text-muted sm:inline">{userName}</span>
+            <Link href="/account" className="hidden text-sm text-muted hover:text-white sm:inline">{userName}</Link>
             <form action={logoutAction}>
               <button className="rounded-lg border border-glass-border bg-white/6 px-4 py-2 text-sm font-bold text-white hover:bg-white/12">
                 {t('logout_button', lang)}

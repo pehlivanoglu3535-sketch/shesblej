@@ -135,7 +135,19 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
         <div className="mt-4 rounded-xl border border-glass-border bg-white/4 p-3.5 text-sm">
           <strong>{t('detail_contact_label', lang)}</strong>
           <br />
-          {t('detail_phone_label', lang)}: {listing.phone}
+          {user ? (
+            <>
+              {t('detail_phone_label', lang)}: {listing.phone}
+            </>
+          ) : (
+            <>
+              <span className="text-muted">{t('phone_locked_message', lang)}</span>
+              <br />
+              <a href="/login" className="mt-1 inline-block font-bold text-primary underline">
+                {t('phone_locked_cta', lang)}
+              </a>
+            </>
+          )}
         </div>
 
         {!isOwner && listing.owner_id && (
