@@ -12,14 +12,16 @@ export default async function AccountPage() {
 
   const supabase = await createClient();
 
-  const [{ count: listingsCount }, { count: favoritesCount }, { data: messageRows }] = await Promise.all([
-    supabase.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
-    supabase.from('favorites').select('listing_id', { count: 'exact', head: true }).eq('user_id', user.id),
-    supabase
-      .from('messages')
-      .select('listing_id, sender_id, receiver_id')
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
-  ]);
+  const [{ count: listingsCount }, { count: favoritesCount }, { data: messageRows }, { count: unreadCount }] =
+    await Promise.all([
+      supabase.from('listings').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
+      supabase.from('favorites').select('listing_id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase
+        .from('messages')
+        .select('listing_id, sender_id, receiver_id')
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('receiver_id', user.id).is('read_at', null),
+    ]);
 
   const conversations = new Set(
     (messageRows ?? []).map((row) => {
@@ -29,9 +31,9 @@ export default async function AccountPage() {
   );
 
   const cards = [
-    { href: '/my-listings', label: t('nav_my_listings', lang), count: listingsCount ?? 0 },
-    { href: '/favorites', label: t('nav_my_favorites', lang), count: favoritesCount ?? 0 },
-    { href: '/messages', label: t('nav_my_messages', lang), count: conversations.size },
+    { href: '/my-listings', label: t('nav_my_listings', lang), count: listingsCount ?? 0, unread: 0 },
+    { href: '/favorites', label: t('nav_my_favorites', lang), count: favoritesCount ?? 0, unread: 0 },
+    { href: '/messages', label: t('nav_my_messages', lang), count: conversations.size, unread: unreadCount ?? 0 },
   ];
 
   return (
@@ -56,8 +58,13 @@ export default async function AccountPage() {
           <Link
             key={c.href}
             href={c.href}
-            className="rounded-2xl border border-glass-border bg-surface p-5 text-center hover:bg-white/6"
+            className="relative rounded-2xl border border-glass-border bg-surface p-5 text-center hover:bg-white/6"
           >
+            {!!c.unread && (
+              <span className="absolute right-3 top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-extrabold text-white">
+                {c.unread > 9 ? '9+' : c.unread}
+              </span>
+            )}
             <div className="text-3xl font-extrabold text-primary">{c.count}</div>
             <div className="mt-1 text-sm font-semibold text-[#cbc6ba]">{c.label}</div>
             <div className="mt-2 text-xs text-muted">{t('account_view_all', lang)} →</div>

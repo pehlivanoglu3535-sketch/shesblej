@@ -3,23 +3,49 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useTransition, useState } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { LANGUAGES, t, type LangCode } from '@/lib/i18n';
 import { setLanguageAction } from '@/app/actions/language';
 import { logoutAction } from '@/app/(auth)/actions';
+import { createClient } from '@/lib/supabase/client';
 
 export default function Header({
   lang,
+  userId,
   userName,
   isAdmin,
+  initialUnreadCount,
 }: {
   lang: LangCode;
+  userId: string | null;
   userName: string | null;
   isAdmin: boolean;
+  initialUnreadCount: number;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
+
+  useEffect(() => {
+    setUnreadCount(initialUnreadCount);
+  }, [initialUnreadCount]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`messages-notify-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` },
+        () => setUnreadCount((c) => c + 1)
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   function onLangChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const next = e.target.value as LangCode;
@@ -80,7 +106,14 @@ export default function Header({
               <Link href="/account" className="hover:text-white">{t('nav_account', lang)}</Link>
               <Link href="/my-listings" className="hover:text-white">{t('nav_my_listings', lang)}</Link>
               <Link href="/favorites" className="hover:text-white">{t('nav_my_favorites', lang)}</Link>
-              <Link href="/messages" className="hover:text-white">{t('nav_my_messages', lang)}</Link>
+              <Link href="/messages" className="relative hover:text-white">
+                {t('nav_my_messages', lang)}
+                {unreadCount > 0 && (
+                  <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               {isAdmin && (
                 <Link href="/admin" className="hover:text-white">{t('admin_panel_link', lang)}</Link>
               )}

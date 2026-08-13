@@ -4,6 +4,22 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { t, type LangCode } from '@/lib/i18n';
 
+export async function markMessagesReadAction(listingId: string, otherId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('listing_id', listingId)
+    .eq('sender_id', otherId)
+    .eq('receiver_id', user.id)
+    .is('read_at', null);
+}
+
 export type MessageState = { error: string | null; sent?: boolean };
 
 const MESSAGE_RATE_LIMIT_SECONDS = 15;

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/get-lang";
 import { getCurrentUser } from "@/lib/get-user";
+import { getUnreadMessageCount } from "@/lib/messages";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import GoogleTranslate from "@/components/GoogleTranslate";
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
   const user = await getCurrentUser();
+  const unreadCount = user ? await getUnreadMessageCount(user.id) : 0;
 
   return (
     <html
@@ -33,7 +35,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <GoogleTranslate siteLang={lang} />
-        <Header lang={lang} userName={user?.name ?? null} isAdmin={user?.isAdmin ?? false} />
+        <Header
+          lang={lang}
+          userId={user?.id ?? null}
+          userName={user?.name ?? null}
+          isAdmin={user?.isAdmin ?? false}
+          initialUnreadCount={unreadCount}
+        />
         {children}
         <Footer lang={lang} />
       </body>

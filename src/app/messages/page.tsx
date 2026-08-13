@@ -11,6 +11,7 @@ type Row = {
   receiver_id: string | null;
   text: string;
   created_at: string;
+  read_at: string | null;
 };
 
 export default async function MessagesInboxPage() {
@@ -21,19 +22,26 @@ export default async function MessagesInboxPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from('messages')
-    .select('listing_id, sender_id, receiver_id, text, created_at')
+    .select('listing_id, sender_id, receiver_id, text, created_at, read_at')
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order('created_at', { ascending: false });
 
   const rows = (data ?? []) as Row[];
 
-  const conversations = new Map<string, { listingId: string; otherId: string; text: string; createdAt: string }>();
+  const conversations = new Map<
+    string,
+    { listingId: string; otherId: string; text: string; createdAt: string; unread: boolean }
+  >();
   for (const row of rows) {
     const otherId = row.sender_id === user.id ? row.receiver_id : row.sender_id;
     if (!otherId) continue;
     const key = `${row.listing_id}:${otherId}`;
-    if (!conversations.has(key)) {
-      conversations.set(key, { listingId: row.listing_id, otherId, text: row.text, createdAt: row.created_at });
+    const unread = row.receiver_id === user.id && row.read_at === null;
+    const existing = conversations.get(key);
+    if (!existing) {
+      conversations.set(key, { listingId: row.listing_id, otherId, text: row.text, createdAt: row.created_at, unread });
+    } else if (unread) {
+      existing.unread = true;
     }
   }
 
@@ -67,14 +75,19 @@ export default async function MessagesInboxPage() {
             <Link
               key={`${c.listingId}:${c.otherId}`}
               href={`/messages/${c.listingId}/${c.otherId}`}
-              className="block rounded-xl border border-glass-border bg-surface p-3.5 hover:bg-white/6"
+              className={`block rounded-xl border p-3.5 hover:bg-white/6 ${
+                c.unread ? 'border-primary/40 bg-primary/5' : 'border-glass-border bg-surface'
+              }`}
             >
               <div className="flex items-center justify-between text-sm font-semibold">
-                <span>{profileNames.get(c.otherId) ?? '—'}</span>
+                <span className="flex items-center gap-1.5">
+                  {c.unread && <span className="h-2 w-2 rounded-full bg-red-500" />}
+                  {profileNames.get(c.otherId) ?? '—'}
+                </span>
                 <span className="text-xs font-normal text-muted">{new Date(c.createdAt).toISOString().slice(0, 10)}</span>
               </div>
               <div className="mt-0.5 text-xs text-muted">{listingTitles.get(c.listingId) ?? ''}</div>
-              <p className="mt-1 truncate text-sm text-[#cbc6ba]">{c.text}</p>
+              <p className={`mt-1 truncate text-sm ${c.unread ? 'font-semibold text-white' : 'text-[#cbc6ba]'}`}>{c.text}</p>
             </Link>
           ))}
         </div>

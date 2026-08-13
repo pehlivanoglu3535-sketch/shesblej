@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/get-user';
 import { createClient } from '@/lib/supabase/server';
 import { t } from '@/lib/i18n';
 import MessageForm from '@/app/listing/[id]/MessageForm';
+import { markMessagesReadAction } from '@/app/actions/messages';
 
 export default async function MessageThreadPage({ params }: PageProps<'/messages/[listingId]/[otherId]'>) {
   const { listingId, otherId } = await params;
@@ -18,6 +19,8 @@ export default async function MessageThreadPage({ params }: PageProps<'/messages
   if (!listing) notFound();
 
   const { data: otherProfile } = await supabase.from('profiles_public').select('name').eq('id', otherId).single();
+
+  await markMessagesReadAction(listingId, otherId);
 
   const { data: messages } = await supabase
     .from('messages')
