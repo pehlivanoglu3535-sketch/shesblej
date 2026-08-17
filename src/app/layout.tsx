@@ -7,6 +7,7 @@ import { getUnreadMessageCount } from "@/lib/messages";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,6 +22,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ShesBlej",
   description: "Kosova'nın ilan platformu",
+  // Google Search Console doğrulaması — ortam değişkeninden okunur.
+  // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION tanımlı değilse eklenmez.
+  verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -44,6 +48,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         />
         {children}
         <Footer lang={lang} />
+        <GoogleAnalytics />
       </body>
     </html>
   );
