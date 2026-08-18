@@ -87,14 +87,17 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   }
 
   async function onPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+    const selected = Array.from(e.target.files ?? []);
     e.target.value = '';
+    if (selected.length === 0) return;
+
+    // Take what still fits rather than rejecting the whole selection: picking
+    // photos on a phone is fiddly, and dropping all of them over the limit
+    // means redoing the entire selection.
+    const remaining = MAX_PHOTOS - photos.length;
+    const files = selected.slice(0, Math.max(0, remaining));
+    setPhotoError(files.length < selected.length ? t('toast_photo_limit', lang) : null);
     if (files.length === 0) return;
-    if (photos.length + files.length > MAX_PHOTOS) {
-      setPhotoError(t('toast_photo_limit', lang));
-      return;
-    }
-    setPhotoError(null);
     setUploading(true);
     try {
       const supabase = createClient();
