@@ -59,10 +59,7 @@ export default function RegisterForm({ lang }: { lang: LangCode }) {
           <Field label={t('label_email', lang)} name="email" type="email" required />
           <Field label={t('label_phone_optional', lang)} name="phone" />
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('label_id_number', lang)} name="idNumber" required />
-            <Field label={t('label_birth_date', lang)} name="birthDate" type="date" required />
-          </div>
+          <Field label={t('label_birth_date', lang)} name="birthDate" type="date" required />
 
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('label_password', lang)} name="password" type="password" required />

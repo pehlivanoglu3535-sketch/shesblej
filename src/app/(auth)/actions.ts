@@ -26,13 +26,12 @@ export async function registerAction(
   const companyName = String(formData.get('companyName') || '').trim();
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const phone = String(formData.get('phone') || '').trim();
-  const idNumber = String(formData.get('idNumber') || '').trim();
   const birthDate = String(formData.get('birthDate') || '');
   const consent = formData.get('consent') === 'on';
   const password = String(formData.get('password') || '');
   const passwordConfirm = String(formData.get('passwordConfirm') || '');
 
-  if (!name || !email || !idNumber || !birthDate || !password || !passwordConfirm) {
+  if (!name || !email || !birthDate || !password || !passwordConfirm) {
     return { error: t('toast_fill_required', lang) };
   }
   if (accountType === 'business' && !companyName) {
@@ -62,7 +61,6 @@ export async function registerAction(
         data: {
           name,
           phone,
-          id_number: idNumber,
           birth_date: birthDate,
           consent_given: true,
           account_type: accountType,
