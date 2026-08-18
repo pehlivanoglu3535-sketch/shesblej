@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { categoryPhotoUri, listingHue } from '@/lib/photos';
 import { CATEGORIES } from '@/lib/constants';
 import { daysRemaining, type Listing } from '@/lib/listings';
@@ -15,12 +16,23 @@ export default function ListingCard({ listing, lang }: { listing: Listing; lang:
       className="group block overflow-hidden rounded-2xl border border-glass-border bg-surface shadow-[0_4px_14px_rgba(0,0,0,0.22)] transition hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(0,0,0,0.38)]"
     >
       <div className="relative h-[154px] overflow-hidden bg-[#1c1a12]">
-        <img
-          src={hasPhoto ? listing.photos[0] : categoryPhotoUri(listing.category)}
-          alt=""
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.08]"
-          style={{ filter: hasPhoto ? 'none' : `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
-        />
+        {hasPhoto ? (
+          <Image
+            src={listing.photos[0]}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+            className="object-cover transition duration-300 group-hover:scale-[1.08]"
+          />
+        ) : (
+          // Placeholders are inline SVG data URIs — nothing to fetch or optimize.
+          <img
+            src={categoryPhotoUri(listing.category)}
+            alt=""
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.08]"
+            style={{ filter: `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
+          />
+        )}
         <span
           className={`absolute top-2.5 left-2.5 rounded-lg border border-glass-border px-2.5 py-1 text-[11px] font-bold backdrop-blur-sm ${days <= 5 ? 'text-red-400 border-red-400/40' : 'text-[#d6d1c4]'}`}
           style={{ background: 'rgba(10,10,8,.72)' }}

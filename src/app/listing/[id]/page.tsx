@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getLang } from '@/lib/get-lang';
 import { getListingById, daysRemaining } from '@/lib/listings';
@@ -51,12 +52,16 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
     <main className="mx-auto max-w-2xl px-6 py-10">
       <div className="rounded-2xl border border-glass-border bg-surface p-7">
         <div className="relative h-[240px] overflow-hidden rounded-lg">
-          <img
-            src={mainPhoto}
-            alt=""
-            className="h-full w-full object-cover"
-            style={{ filter: hasPhoto ? 'none' : `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
-          />
+          {hasPhoto ? (
+            <Image src={mainPhoto} alt="" fill sizes="(max-width: 768px) 100vw, 672px" priority className="object-cover" />
+          ) : (
+            <img
+              src={mainPhoto}
+              alt=""
+              className="h-full w-full object-cover"
+              style={{ filter: `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
+            />
+          )}
           <span
             className="absolute top-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full text-sm"
             style={{ background: 'rgba(255,255,255,.9)' }}
@@ -68,7 +73,7 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
         {hasPhoto && listing.photos.length > 1 && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto">
             {listing.photos.map((p, i) => (
-              <img key={i} src={p} className="h-14 w-14 flex-shrink-0 rounded-md object-cover" alt="" />
+              <Image key={i} src={p} width={56} height={56} sizes="56px" className="h-14 w-14 flex-shrink-0 rounded-md object-cover" alt="" />
             ))}
           </div>
         )}

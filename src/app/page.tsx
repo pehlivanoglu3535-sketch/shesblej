@@ -6,7 +6,6 @@ import Hero from '@/components/Hero';
 import CategoryCards from '@/components/CategoryCards';
 import Filters from '@/components/Filters';
 import ListingCard from '@/components/ListingCard';
-import StatsBar from '@/components/StatsBar';
 import TestimonialsSection from '@/components/TestimonialsSection';
 
 function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -74,7 +73,6 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
   return (
     <main className="mx-auto max-w-6xl px-6 py-7">
       {!category && !query && <Hero lang={lang} />}
-      {!category && !query && <StatsBar lang={lang} />}
       {!category && !query && <CategoryCards lang={lang} />}
 
       <Filters lang={lang} category={category} />

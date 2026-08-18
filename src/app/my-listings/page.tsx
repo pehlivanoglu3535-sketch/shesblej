@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { getLang } from '@/lib/get-lang';
 import { getCurrentUser } from '@/lib/get-user';
@@ -36,12 +37,16 @@ export default async function MyListingsPage() {
                 className="flex items-center gap-3.5 rounded-xl border border-glass-border bg-surface p-3.5"
               >
                 <Link href={`/listing/${listing.id}`} className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[#1c1a12]">
-                  <img
-                    src={hasPhoto ? listing.photos[0] : categoryPhotoUri(listing.category)}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    style={{ filter: hasPhoto ? 'none' : `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
-                  />
+                  {hasPhoto ? (
+                    <Image src={listing.photos[0]} alt="" fill sizes="64px" className="object-cover" />
+                  ) : (
+                    <img
+                      src={categoryPhotoUri(listing.category)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      style={{ filter: `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
+                    />
+                  )}
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link href={`/listing/${listing.id}`} className="block truncate text-sm font-semibold hover:underline">
