@@ -7,6 +7,7 @@ import { t, catName, subName, type LangCode } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/client';
 import type { Listing } from '@/lib/listings';
 import type { CurrentUser } from '@/lib/get-user';
+import { compressImage } from '@/lib/compress-image';
 
 const STEP_KEYS = ['step_category', 'step_details', 'step_location', 'step_contact'] as const;
 
@@ -105,12 +106,14 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
         return;
       }
       const uploaded: string[] = [];
-      for (const file of files) {
-        if (!file.type.startsWith('image/')) continue;
-        if (file.size > 8 * 1024 * 1024) {
+      for (const original of files) {
+        if (!original.type.startsWith('image/')) continue;
+        if (original.size > 25 * 1024 * 1024) {
           setPhotoError(t('toast_storage_full', lang));
           continue;
         }
+        // Shrink before upload so phone-camera photos don't eat the storage quota.
+        const file = await compressImage(original);
         const ext = file.name.split('.').pop() || 'jpg';
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from('listing-photos').upload(path, file, {

@@ -20,12 +20,12 @@ export const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
 };
 
 export const LISTING_EXPIRY_DAYS = 29;
-export const MAX_PHOTOS = 5;
+export const MAX_PHOTOS = 10;
 
 export type PlanId = 'standard' | 'premium' | 'enterprise';
 
 export const PLANS: Record<PlanId, { listingLimit: number; showcaseLimit: number; priceEur: number }> = {
-  standard: { listingLimit: 3, showcaseLimit: 1, priceEur: 0 },
+  standard: { listingLimit: 20, showcaseLimit: 1, priceEur: 0 },
   premium: { listingLimit: 10, showcaseLimit: 3, priceEur: 5 },
   enterprise: { listingLimit: 100, showcaseLimit: 20, priceEur: 20 },
 };

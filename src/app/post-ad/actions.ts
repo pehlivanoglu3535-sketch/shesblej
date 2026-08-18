@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { t, type LangCode } from '@/lib/i18n';
-import { CATEGORIES, type CategoryId } from '@/lib/constants';
+import { CATEGORIES, MAX_PHOTOS, type CategoryId } from '@/lib/constants';
 import { listingLimit, showcaseLimit, type PlanProfile } from '@/lib/plan';
 
 export type PostAdState = { error: string | null };
@@ -90,7 +90,7 @@ export async function createListingAction(
   let photos: string[] = [];
   try {
     const parsed = JSON.parse(photosRaw);
-    if (Array.isArray(parsed)) photos = parsed.filter((p) => typeof p === 'string').slice(0, 5);
+    if (Array.isArray(parsed)) photos = parsed.filter((p) => typeof p === 'string').slice(0, MAX_PHOTOS);
   } catch {
     photos = [];
   }
@@ -188,7 +188,7 @@ export async function updateListingAction(
   let photos: string[] = [];
   try {
     const parsed = JSON.parse(photosRaw);
-    if (Array.isArray(parsed)) photos = parsed.filter((p) => typeof p === 'string').slice(0, 5);
+    if (Array.isArray(parsed)) photos = parsed.filter((p) => typeof p === 'string').slice(0, MAX_PHOTOS);
   } catch {
     photos = [];
   }
