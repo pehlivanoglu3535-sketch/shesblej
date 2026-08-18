@@ -10,7 +10,6 @@ type Member = {
   name: string;
   email: string | null;
   phone: string | null;
-  birth_date: string | null;
   consent_given: boolean;
   account_type: string;
   created_at: string;
@@ -109,7 +108,6 @@ export default function AdminTabs({
                   <Th>{t('admin_col_email', lang)}</Th>
                   <Th>{t('admin_col_phone', lang)}</Th>
                   <Th>{t('admin_col_account_type', lang)}</Th>
-                  <Th>{t('admin_col_birth_date', lang)}</Th>
                   <Th>{t('admin_col_consent', lang)}</Th>
                   <Th>{t('admin_col_date', lang)}</Th>
                 </tr>
@@ -121,7 +119,6 @@ export default function AdminTabs({
                     <Td>{m.email ?? '—'}</Td>
                     <Td>{m.phone ?? '—'}</Td>
                     <Td>{m.account_type}</Td>
-                    <Td>{m.birth_date ?? '—'}</Td>
                     <Td>{m.consent_given ? '✓' : '—'}</Td>
                     <Td>{new Date(m.created_at).toISOString().slice(0, 10)}</Td>
                   </tr>
