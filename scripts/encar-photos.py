@@ -18,18 +18,15 @@ BASE = "https://ci.encar.com/carpicture/"
 HQ = "?impolicy=widthRate&rw=1200"
 UA = {"User-Agent": "Mozilla/5.0"}
 
-# Sadece kosedeki Encar filigranini tasiyan kareler cikariliyor. Aracin uzerindeki
-# kirmizi Encar plakasi gibi sahne icindeki yazilar sorun degil -- kullanici boyle
-# istedi. Bes ilanin kontak sayfasi gozle incelendi:
-#   _001.._004  studyo dis cekimleri -- sag ustte filigran
-#   _027        turuncu zeminli tanitim karesi -- ayni filigran
-BRANDED = {1, 2, 3, 4, 27}
-
-# Bazi ilanlarda filigran fazladan bir karede daha cikiyor.
-EXTRA_BRANDED = {
-    "42475521": {24},   # BMW 3-Series: bagaj acik dis cekimde sag ustte filigran
-}
+# Filigranli studyo dis cekimleri (_001.._004) artik dahil: aracin tamamini
+# gosteren tek kareler onlar ve kullanici filigrani kabul etti. Disarida kalan
+# tek kare _027 -- o bir arac fotografi degil, turuncu zeminli tanitim karti.
+BRANDED = {27}
+EXTRA_BRANDED: dict[str, set[int]] = {}
 MAX_PER_LISTING = 20
+
+# Kapak: aracin 3/4 on dis gorunumu.
+COVER_INDEX = 1
 
 CARS = [
     ("42424422", "carpicture02/pic4242", "BMW 5-Series (G60) 520i M Sport"),
@@ -84,6 +81,14 @@ for car_id, prefix, title in CARS:
             if miss >= 8 and found:
                 break
         time.sleep(0.05)
+
+    # Kapak karesi. Encar'in aracin tamamini gosteren studyo cekimlerinin hepsinde
+    # filigran var, o yuzden kapak filigransiz kareler arasindan secilmek zorunda.
+    # _010 her ilanda ayni kadraj: kapisi acik yan gorunum -- dogal sirada basa
+    # dusen jant yakin cekiminden (_005) cok daha taniticidir.
+    cover = next((u for u in found if f"_{COVER_INDEX:03d}.jpg" in u), None)
+    if cover:
+        found = [cover] + [u for u in found if u != cover]
 
     summary.append((title, len(found)))
     if not found:
