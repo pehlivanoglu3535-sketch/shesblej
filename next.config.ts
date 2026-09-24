@@ -10,9 +10,14 @@ const nextConfig: NextConfig = {
     // optimizer means Vercel fetches each original once, then serves resized
     // WebP from its own CDN — without this, every card render pulled the full
     // upload straight from Supabase and burned the 5 GB/month egress quota.
-    remotePatterns: supabaseHost
-      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    remotePatterns: [
+      ...(supabaseHost
+        ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
+        : []),
+      // Encar export listings (official partner inventory) are served from
+      // Encar's own image CDN rather than re-uploaded to our storage.
+      { protocol: "https" as const, hostname: "ci.encar.com", pathname: "/carpicture/**" },
+    ],
     // Keep optimized copies at the edge for a month so a popular listing
     // costs Supabase one fetch, not one per visitor.
     minimumCacheTTL: 2678400,
