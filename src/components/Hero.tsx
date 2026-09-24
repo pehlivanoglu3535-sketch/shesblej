@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CATEGORIES } from '@/lib/constants';
 import { t, catName, type LangCode } from '@/lib/i18n';
+import CategoryIcon from './CategoryIcon';
 
 export default function Hero({ lang }: { lang: LangCode }) {
   return (
@@ -24,9 +25,10 @@ export default function Hero({ lang }: { lang: LangCode }) {
             <Link
               key={c.id}
               href={`/?category=${c.id}`}
-              className="rounded-full border border-glass-border bg-white/7 px-4 py-2 text-sm font-semibold hover:bg-primary hover:text-ink hover:border-primary"
+              className="inline-flex items-center gap-2 rounded-full border border-glass-border bg-white/7 px-4 py-2 text-sm font-semibold hover:bg-primary hover:text-ink hover:border-primary"
             >
-              {c.icon} {catName(c.id, lang)}
+              <CategoryIcon id={c.id} />
+              {catName(c.id, lang)}
             </Link>
           ))}
         </div>
