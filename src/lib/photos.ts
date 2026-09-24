@@ -1,82 +1,92 @@
-/** Self-contained SVG placeholder 'photos' per category — no external image requests, ported from the prototype. */
+/**
+ * Kategori görselleri ve fotoğrafsız ilanlar için yer tutucular.
+ *
+ * Dışarıdan görsel çekmiyoruz: hepsi satır içi SVG data URI, yani sıfır ağ
+ * isteği ve sıfır depolama maliyeti. Tasarım bilinçli olarak sitenin koyu
+ * siyah + altın kimliğine bağlı — önceki çizgi film tarzı renkli sahneler
+ * marka ile çelişiyordu.
+ */
 import type { CategoryId } from './constants';
 
-function svgToDataUri(svg: string): string { return 'data:image/svg+xml,' + encodeURIComponent(svg); }
+function svgToDataUri(svg: string): string {
+  return 'data:image/svg+xml,' + encodeURIComponent(svg.replace(/\s+/g, ' ').trim());
+}
 
-function buildEmlakScene(){
-  let windows = '';
-  for(let r=0;r<4;r++) for(let c=0;c<3;c++){
-    const x=66+c*28, y=118+r*38, lit=(r+c)%3===0;
-    windows += `<rect x="${x}" y="${y}" width="16" height="20" rx="1" fill="${lit?'#ffd76a':'#7fa8c9'}"/>`;
-  }
-  for(let r=0;r<5;r++) for(let c=0;c<4;c++){
-    const x=196+c*32, y=80+r*32, lit=(r*c)%4===0;
-    windows += `<rect x="${x}" y="${y}" width="18" height="20" rx="1" fill="${lit?'#ffd76a':'#8bb4d6'}"/>`;
-  }
+const GOLD = '#fdd202';
+
+/** Ortak zemin: koyu degrade + üst-orta bölgede yumuşak altın parıltı. */
+function frame(inner: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-    <defs><linearGradient id="skyE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ed0f2"/><stop offset="1" stop-color="#eef8ff"/></linearGradient></defs>
-    <rect width="400" height="300" fill="url(#skyE)"/>
-    <circle cx="345" cy="50" r="26" fill="#ffe27a"/>
-    <rect x="0" y="240" width="400" height="60" fill="#cddccf"/>
-    <rect x="50" y="110" width="120" height="150" fill="#f2ebe0"/>
-    <rect x="190" y="70" width="160" height="190" fill="#e5d9c4"/>
-    ${windows}
-    <circle cx="30" cy="255" r="16" fill="#7fae7a"/>
-    <circle cx="378" cy="258" r="12" fill="#7fae7a"/>
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#231f16"/>
+        <stop offset="0.55" stop-color="#141209"/>
+        <stop offset="1" stop-color="#0a0a08"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="0.5" cy="0.34" r="0.62">
+        <stop offset="0" stop-color="${GOLD}" stop-opacity="0.18"/>
+        <stop offset="1" stop-color="${GOLD}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="400" height="300" fill="url(#bg)"/>
+    <rect width="400" height="300" fill="url(#glow)"/>
+    <g fill="none" stroke="${GOLD}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      ${inner}
+    </g>
+    <line x1="96" y1="232" x2="304" y2="232" stroke="${GOLD}" stroke-opacity="0.22" stroke-width="2"/>
   </svg>`;
 }
 
-function buildVasitaScene(){
-  let dashes = '';
-  for(let i=0;i<6;i++) dashes += `<rect x="${20+i*70}" y="253" width="34" height="6" rx="3" fill="#fff"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-    <defs><linearGradient id="skyV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf8a"/><stop offset="1" stop-color="#fff3e0"/></linearGradient></defs>
-    <rect width="400" height="300" fill="url(#skyV)"/>
-    <polygon points="0,220 90,140 180,220" fill="#e3b98f" opacity="0.6"/>
-    <polygon points="140,220 250,120 360,220" fill="#d7ad82" opacity="0.6"/>
-    <rect x="0" y="220" width="400" height="80" fill="#556472"/>
-    ${dashes}
-    <rect x="90" y="160" width="200" height="50" rx="14" fill="#3f6fb0"/>
-    <path d="M115,160 Q140,120 190,120 L230,120 Q265,120 280,160 Z" fill="#3f6fb0"/>
-    <rect x="150" y="130" width="35" height="26" rx="4" fill="#cfe8ff"/>
-    <rect x="190" y="130" width="45" height="26" rx="4" fill="#cfe8ff"/>
-    <circle cx="130" cy="212" r="22" fill="#22303e"/>
-    <circle cx="130" cy="212" r="9" fill="#c9d2d8"/>
-    <circle cx="255" cy="212" r="22" fill="#22303e"/>
-    <circle cx="255" cy="212" r="9" fill="#c9d2d8"/>
-  </svg>`;
+function emlakScene(): string {
+  return frame(`
+    <path d="M150 210 V128 l34 -22 34 22 V210"/>
+    <path d="M218 210 V150 h42 v60"/>
+    <rect x="167" y="146" width="16" height="16" rx="2" stroke-opacity="0.75"/>
+    <rect x="193" y="146" width="16" height="16" rx="2" stroke-opacity="0.75"/>
+    <rect x="167" y="174" width="16" height="16" rx="2" stroke-opacity="0.45"/>
+    <rect x="231" y="166" width="14" height="14" rx="2" stroke-opacity="0.6"/>
+    <path d="M190 210 v-22 h12 v22" stroke-opacity="0.85"/>
+  `);
 }
 
-function buildEsyaScene(){
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-    <defs><linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9e6"/><stop offset="1" stop-color="#fff5f8"/></linearGradient></defs>
-    <rect width="400" height="300" fill="url(#skyG)"/>
-    <rect x="0" y="235" width="400" height="65" fill="#e7c9b7"/>
-    <rect x="150" y="150" width="100" height="90" rx="6" fill="#e08a7d"/>
-    <rect x="150" y="150" width="100" height="18" fill="#c96b5e"/>
-    <rect x="192" y="150" width="16" height="90" fill="#c96b5e"/>
-    <polygon points="150,150 200,120 250,150" fill="#f4a99a"/>
-    <circle cx="80" cy="190" r="34" fill="#f6c667"/>
-    <rect x="66" y="220" width="28" height="40" rx="4" fill="#e0a94c"/>
-    <rect x="280" y="170" width="60" height="70" rx="8" fill="#7fb3c9"/>
-    <circle cx="310" cy="195" r="14" fill="#e9f5fa"/>
-  </svg>`;
+function vasitaScene(): string {
+  return frame(`
+    <path d="M118 188 v-18 q0 -8 9 -11 l24 -8 18 -22 q4 -5 11 -5 h48 q7 0 11 5 l18 22 24 8 q9 3 9 11 v18"/>
+    <path d="M160 149 h80" stroke-opacity="0.55"/>
+    <circle cx="154" cy="190" r="17"/>
+    <circle cx="246" cy="190" r="17"/>
+    <path d="M171 190 h58" stroke-opacity="0.35"/>
+    <path d="M124 164 h14 M262 164 h14" stroke-opacity="0.6"/>
+  `);
 }
 
+function esyaScene(): string {
+  return frame(`
+    <path d="M140 156 l60 -28 60 28 v56 l-60 28 -60 -28 z"/>
+    <path d="M140 156 l60 28 60 -28" stroke-opacity="0.8"/>
+    <path d="M200 184 v56" stroke-opacity="0.8"/>
+    <path d="M170 142 l60 28" stroke-opacity="0.4"/>
+  `);
+}
 
 const CATEGORY_PHOTO_CACHE: Record<string, string> = {};
 export function categoryPhotoUri(catId: CategoryId): string {
   if (CATEGORY_PHOTO_CACHE[catId]) return CATEGORY_PHOTO_CACHE[catId];
-  const svg = catId === 'emlak' ? buildEmlakScene() : catId === 'vasita' ? buildVasitaScene() : buildEsyaScene();
+  const svg = catId === 'emlak' ? emlakScene() : catId === 'vasita' ? vasitaScene() : esyaScene();
   return (CATEGORY_PHOTO_CACHE[catId] = svgToDataUri(svg));
 }
 
-/** Deterministic hue-rotate per listing (works off a UUID string) so cards in the same
- *  category don't all look visually identical while still using the shared base scene. */
+/**
+ * Fotoğrafsız ilanlar arasında hafif bir renk farkı bırakır.
+ *
+ * Eskiden 0-359° arasıydı; altın tonlu tek renk tasarımda bu, kartları rastgele
+ * mor/yeşil yapıp marka bütünlüğünü bozuyor. Dar bir aralık, kartların birbirinin
+ * kopyası görünmesini engellerken altın tonunda kalmalarını sağlıyor.
+ */
 export function listingHue(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
   }
-  return hash % 360;
+  return (hash % 25) - 12;
 }

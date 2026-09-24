@@ -28,9 +28,10 @@ export default function CategoryCards({ lang }: { lang: LangCode }) {
               className="absolute inset-0 flex flex-col justify-end p-4.5 text-white"
               style={{ background: 'linear-gradient(180deg,rgba(10,10,8,.05) 35%,rgba(10,10,8,.92))' }}
             >
-              <div className="mb-1 text-2xl">{c.icon}</div>
+              {/* Emoji kaldırıldı: kartın kendi çizgi ikonu zaten kategoriyi
+                  anlatıyor, ikisi birlikte dağınık duruyordu. */}
               <h3 className="mb-0.5 text-base font-bold">{catName(c.id, lang)}</h3>
-              <p className="text-[12.5px] text-[#aeb9c8]">{catDesc(c.id, lang)}</p>
+              <p className="text-[12.5px] text-[#cbc6ba]">{catDesc(c.id, lang)}</p>
             </div>
           </Link>
         ))}
