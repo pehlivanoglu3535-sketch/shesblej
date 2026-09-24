@@ -18,13 +18,17 @@ BASE = "https://ci.encar.com/carpicture/"
 HQ = "?impolicy=widthRate&rw=1200"
 UA = {"User-Agent": "Mozilla/5.0"}
 
-# Encar markasi tasiyan kareler. Bes ilanin tum kareleri kontak sayfasi halinde
-# gozle incelendi; desen su:
-#   _001.._004  studyo dis cekimleri -- sag ustte "Trust Encar" filigrani ve
-#               aracin uzerinde kirmizi "Encar" plakasi
-#   _006        motor bolumu -- on tamponda ayni kirmizi Encar plakasi goruluyor
-#   _027        turuncu zeminli Encar tanitim karesi
-BRANDED = {1, 2, 3, 4, 6, 27}
+# Sadece kosedeki Encar filigranini tasiyan kareler cikariliyor. Aracin uzerindeki
+# kirmizi Encar plakasi gibi sahne icindeki yazilar sorun degil -- kullanici boyle
+# istedi. Bes ilanin kontak sayfasi gozle incelendi:
+#   _001.._004  studyo dis cekimleri -- sag ustte filigran
+#   _027        turuncu zeminli tanitim karesi -- ayni filigran
+BRANDED = {1, 2, 3, 4, 27}
+
+# Bazi ilanlarda filigran fazladan bir karede daha cikiyor.
+EXTRA_BRANDED = {
+    "42475521": {24},   # BMW 3-Series: bagaj acik dis cekimde sag ustte filigran
+}
 MAX_PER_LISTING = 20
 
 CARS = [
@@ -62,6 +66,7 @@ statements = []
 summary = []
 
 for car_id, prefix, title in CARS:
+    skip = BRANDED | EXTRA_BRANDED.get(car_id, set())
     found = []
     miss = 0
     for idx in range(1, 41):
@@ -70,7 +75,7 @@ for car_id, prefix, title in CARS:
         url = f"{BASE}{prefix}/{car_id}_{idx:03d}.jpg"
         if exists(url):
             miss = 0
-            if idx not in BRANDED:
+            if idx not in skip:
                 found.append(url + HQ)
         else:
             miss += 1
