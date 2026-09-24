@@ -20,7 +20,7 @@ export const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
 };
 
 export const LISTING_EXPIRY_DAYS = 29;
-export const MAX_PHOTOS = 10;
+export const MAX_PHOTOS = 20;
 
 export type PlanId = 'standard' | 'premium' | 'enterprise';
 
