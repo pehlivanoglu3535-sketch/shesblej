@@ -18,8 +18,13 @@ BASE = "https://ci.encar.com/carpicture/"
 HQ = "?impolicy=widthRate&rw=1200"
 UA = {"User-Agent": "Mozilla/5.0"}
 
-# Encar markasi tasiyan kareler -- iki ayri ilanda kontak sayfasiyla dogrulandi.
-BRANDED = {1, 2, 3, 4, 27}
+# Encar markasi tasiyan kareler. Bes ilanin tum kareleri kontak sayfasi halinde
+# gozle incelendi; desen su:
+#   _001.._004  studyo dis cekimleri -- sag ustte "Trust Encar" filigrani ve
+#               aracin uzerinde kirmizi "Encar" plakasi
+#   _006        motor bolumu -- on tamponda ayni kirmizi Encar plakasi goruluyor
+#   _027        turuncu zeminli Encar tanitim karesi
+BRANDED = {1, 2, 3, 4, 6, 27}
 MAX_PER_LISTING = 20
 
 CARS = [
