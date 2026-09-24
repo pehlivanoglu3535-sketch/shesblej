@@ -3,6 +3,13 @@
 Veri, sitenin kendi arama ucundan geliyor (Azure Search). Kayit basina tum
 fotograf listesi, Arnavutca aciklama, fiyat, alan ve konum mevcut.
 
+Kullanim:
+    python scripts/remax-listings.py              # canli uctan ceker
+    python scripts/remax-listings.py rx.json      # kaydedilmis yaniti kullanir
+
+Ikinci bicim, dis aga cikisin engellendigi ortamlar icin: tarayicidan alinmis
+ham yanit dosyasi ayni sekilde islenir.
+
 Disarida birakilanlar ve nedenleri:
   - ListingStatusUID != 160 : 160 disindaki kayitlar aktif olmayan/satilmis
     ilanlar (kartlarda "Shitur" etiketi bunlarda cikiyor). Satilmis bir mulku
@@ -11,8 +18,10 @@ Disarida birakilanlar ve nedenleri:
     gosterirdi. "Cmimi sipas kerkeses" destegi eklenene kadar bunlar atlaniyor.
   - Province bilinmeyen : sehir alanini dogru dolduramayiz.
 """
+import html
 import json
 import re
+import sys
 import urllib.request
 
 OWNER = "53b2542a-90da-4355-beaa-e454d375c456"
@@ -56,7 +65,12 @@ def fetch():
         headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
         method="POST")
     with urllib.request.urlopen(req, timeout=60) as r:
-        return [v["content"] for v in json.load(r)["value"]]
+        return json.load(r)
+
+
+def load(path):
+    with open(path, encoding="utf-8-sig") as f:
+        return json.load(f)
 
 
 def slug_type(c):
@@ -66,10 +80,28 @@ def slug_type(c):
     return (parts[2] if len(parts) > 3 else ""), link
 
 
-def clean(html: str) -> str:
-    t = re.sub(r"<br\s*/?>", "\n", html or "")
+# RE/MAX aciklamalarinin sonunda kendi satis temsilcisinin cep numarasi var.
+# Ilan bizim sitemizde bizim telefonumuzla yayinlaniyor; ayni sayfada iki ayri
+# numara birakmak alicida hangisini arayacagi konusunda tereddut yaratir, o
+# yuzden bu blok kesiliyor. Kaynak, ayri bir satirla acikca belirtiliyor.
+AGENT_BLOCK = re.compile(
+    r"\n[^\n]*(?:kontaktoni agjentin|Për më shumë informata)[^\n]*(?:\n[^\n]*)*\Z",
+    re.IGNORECASE)
+PHONE_LINE = re.compile(r"^[^\n]*(?:\+383|\b0[45][0-9][ \-/]?[0-9]{3})[^\n]*$", re.MULTILINE)
+
+SOURCE_NOTE = "Pronë e listuar nga RE/MAX Kosova — partner i ShesBlej."
+
+
+def clean(raw_html: str) -> str:
+    t = re.sub(r"<br\s*/?>", "\n", raw_html or "")
     t = re.sub(r"<[^>]+>", "", t)
+    # Aciklamalar zengin metin alanindan geliyor: "125.000&euro;" gibi HTML
+    # varliklari duz metne cevrilmezse ilanda oldugu gibi gorunur.
+    t = html.unescape(t)
     t = t.replace("\r", "")
+    t = AGENT_BLOCK.sub("", t)
+    t = PHONE_LINE.sub("", t)
+    t = re.sub(r"[ \t]+\n", "\n", t)
     t = re.sub(r"\n{3,}", "\n\n", t)
     return t.strip()
 
@@ -78,9 +110,22 @@ def sql_str(v: str) -> str:
     return "'" + v.replace("'", "''") + "'"
 
 
-rows = fetch()
+def photo_urls(c):
+    """Fotograflari yayin sirasina gore dizer.
+
+    ListingImages dizisi kaynakta sirali degil: ilk eleman cogu ilanda Order=14
+    gibi bir kare oluyor. Kapak karesinin dogru cikmasi icin Order alanina gore
+    siralamak sart.
+    """
+    imgs = sorted((c.get("ListingImages") or []),
+                  key=lambda im: int(im.get("Order") or 0))
+    return [IMG + im["FileName"] for im in imgs][:MAX_PHOTOS]
+
+
+raw = load(sys.argv[1]) if len(sys.argv) > 1 else fetch()
+rows = [v["content"] for v in raw["value"]]
 statements = []
-atlanan = {"durum": 0, "fiyat": 0, "sehir": 0, "tip": 0}
+atlanan = {"durum": 0, "fiyat": 0, "sehir": 0, "tip": 0, "fotosuz": 0}
 alinan = []
 
 for c in rows:
@@ -128,10 +173,11 @@ for c in rows:
         desc = "\n".join(detay) + ("\n\n" + desc if desc else "")
     if kira:
         desc = "ME QIRA\n\n" + desc
-    desc = desc[:5000]
+    desc = (desc + "\n\n" + SOURCE_NOTE)[:5000]
 
-    photos = [IMG + im["FileName"] for im in (c.get("ListingImages") or [])][:MAX_PHOTOS]
+    photos = photo_urls(c)
     if not photos:
+        atlanan["fotosuz"] += 1
         continue
     arr = "ARRAY[" + ", ".join(sql_str(p) for p in photos) + "]::text[]"
 
@@ -139,14 +185,15 @@ for c in rows:
         "insert into public.listings (owner_id, category, subcategory, title, price, city, district, phone, description, photos) values ("
         + ", ".join([
             sql_str(OWNER), sql_str("emlak"), sql_str(sub), sql_str(baslik),
-            str(price), sql_str(city), sql_str(semt or None or ""), sql_str(PHONE),
+            str(price), sql_str(city), sql_str(semt), sql_str(PHONE),
             sql_str(desc), arr,
         ]) + ");"
     )
     alinan.append((baslik, city, sub, price, len(photos)))
 
 out = "supabase/remax_listings.sql"
-open(out, "w", encoding="utf-8").write("\n\n".join(statements) + "\n")
+with open(out, "w", encoding="utf-8") as f:
+    f.write("\n\n".join(statements) + "\n")
 
 print("yazildi:", out)
 print("alinan ilan:", len(alinan), "/", len(rows))

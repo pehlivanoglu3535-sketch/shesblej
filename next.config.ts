@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
       // Encar export listings (official partner inventory) are served from
       // Encar's own image CDN rather than re-uploaded to our storage.
       { protocol: "https" as const, hostname: "ci.encar.com", pathname: "/carpicture/**" },
+      // RE/MAX Kosova listings (partner inventory) — RE/MAX serves its photos
+      // from GryphTech's CDN, the same way Encar serves its own.
+      { protocol: "https" as const, hostname: "cdn.gryphtech.com", pathname: "/userimages/**" },
     ],
     // Keep optimized copies at the edge for a month so a popular listing
     // costs Supabase one fetch, not one per visitor.
