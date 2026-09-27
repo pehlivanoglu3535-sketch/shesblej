@@ -17,17 +17,7 @@ import {
   type Option,
 } from '@/lib/vehicle';
 
-/**
- * Eylem sonucu.
- *
- * `attempt` her donuste artiyor ve tek isi istemciye "yeni bir sonuc geldi"
- * demek. Sunucu eylemi yonlendirmeden donunce React formu sifirliyor;
- * denetimli `input` alanlarini durumlarindan geri yukluyor ama `select`
- * alanlarini yuklemiyor -- React'in sanal agaci degeri dogru bildigi icin
- * DOM'a yeniden yazmiyor, DOM ise sifirlanmis durumda kaliyor. Istemci bu
- * sayaci anahtar olarak kullanip alanlari yeniden baglar.
- */
-export type PostAdState = { error: string | null; attempt: number };
+export type PostAdState = { error: string | null };
 
 const LISTING_RATE_LIMIT_SECONDS = 30;
 
@@ -98,7 +88,7 @@ export async function createListingAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: t('msg_login_prompt', lang), attempt: _prev.attempt + 1 };
+  if (!user) return { error: t('msg_login_prompt', lang) };
 
   const { data: profileRow } = await supabase
     .from('profiles')
@@ -122,7 +112,7 @@ export async function createListingAction(
 
   if (recent) {
     const elapsed = (Date.now() - new Date(recent.created_at).getTime()) / 1000;
-    if (elapsed < LISTING_RATE_LIMIT_SECONDS) return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+    if (elapsed < LISTING_RATE_LIMIT_SECONDS) return { error: t('error_generic', lang) };
   }
 
   const { count: activeCount } = await supabase
@@ -132,7 +122,7 @@ export async function createListingAction(
     .gt('expires_at', new Date().toISOString());
 
   if ((activeCount ?? 0) >= listingLimit(profile)) {
-    return { error: t('toast_listing_limit_reached', lang), attempt: _prev.attempt + 1 };
+    return { error: t('toast_listing_limit_reached', lang) };
   }
 
   const category = String(formData.get('category') || '') as CategoryId;
@@ -151,20 +141,20 @@ export async function createListingAction(
   const wantsHighlight = formData.get('wantsHighlight') === '1';
   const wantsShowcase = formData.get('wantsShowcase') === '1';
 
-  if (!CATEGORIES.some((c) => c.id === category)) return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+  if (!CATEGORIES.some((c) => c.id === category)) return { error: t('error_generic', lang) };
   const cat = CATEGORIES.find((c) => c.id === category)!;
-  if (!cat.subs.some((s) => s.id === subcategory)) return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+  if (!cat.subs.some((s) => s.id === subcategory)) return { error: t('error_generic', lang) };
 
   const price = Number(priceRaw);
   if (!title || !Number.isFinite(price) || price < 0) {
-    return { error: t('toast_fill_title_price', lang), attempt: _prev.attempt + 1 };
+    return { error: t('toast_fill_title_price', lang) };
   }
-  if (!city) return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+  if (!city) return { error: t('error_generic', lang) };
   if (category === 'emlak') {
-    if (!district) return { error: t('toast_district_required', lang), attempt: _prev.attempt + 1 };
-    if (mapLat == null || mapLng == null) return { error: t('toast_map_required', lang), attempt: _prev.attempt + 1 };
+    if (!district) return { error: t('toast_district_required', lang) };
+    if (mapLat == null || mapLng == null) return { error: t('toast_map_required', lang) };
   }
-  if (!phone) return { error: t('toast_phone_required', lang), attempt: _prev.attempt + 1 };
+  if (!phone) return { error: t('toast_phone_required', lang) };
 
   let photos: string[] = [];
   try {
@@ -213,7 +203,7 @@ export async function createListingAction(
 
   if (error || !data) {
     console.error('createListingAction failed:', error?.message);
-    return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+    return { error: t('error_generic', lang) };
   }
 
   if (useUrgent) {
@@ -242,7 +232,7 @@ export async function updateListingAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: t('msg_login_prompt', lang), attempt: _prev.attempt + 1 };
+  if (!user) return { error: t('msg_login_prompt', lang) };
 
   const category = String(formData.get('category') || '') as CategoryId;
   const subcategory = String(formData.get('subcategory') || '');
@@ -258,12 +248,12 @@ export async function updateListingAction(
   const brand = String(formData.get('brand') || '').trim().slice(0, 60);
 
   if (!title || !Number.isFinite(price) || price < 0) {
-    return { error: t('toast_fill_title_price', lang), attempt: _prev.attempt + 1 };
+    return { error: t('toast_fill_title_price', lang) };
   }
   if (category === 'emlak' && (!district || mapLat == null || mapLng == null)) {
-    return { error: t('toast_district_required', lang), attempt: _prev.attempt + 1 };
+    return { error: t('toast_district_required', lang) };
   }
-  if (!phone) return { error: t('toast_phone_required', lang), attempt: _prev.attempt + 1 };
+  if (!phone) return { error: t('toast_phone_required', lang) };
 
   let photos: string[] = [];
   try {
@@ -295,7 +285,7 @@ export async function updateListingAction(
 
   if (error) {
     console.error('updateListingAction failed:', error.message);
-    return { error: t('error_generic', lang), attempt: _prev.attempt + 1 };
+    return { error: t('error_generic', lang) };
   }
 
   redirect(`/listing/${listingId}`);

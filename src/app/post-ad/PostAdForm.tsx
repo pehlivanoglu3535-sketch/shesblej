@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { startTransition, useActionState, useState } from 'react';
 import { createListingAction, updateListingAction, type PostAdState } from './actions';
 import { CATEGORIES, CITIES, CITY_COORDS, MAX_PHOTOS, CAR_BRANDS, type CategoryId } from '@/lib/constants';
 import { t, catName, subName, type LangCode } from '@/lib/i18n';
@@ -34,10 +34,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const boundAction = isEdit
     ? updateListingAction.bind(null, lang, listing.id)
     : createListingAction.bind(null, lang);
-  const [state, formAction, pending] = useActionState<PostAdState, FormData>(boundAction, {
-    error: null,
-    attempt: 0,
-  });
+  const [state, formAction, pending] = useActionState<PostAdState, FormData>(boundAction, { error: null });
 
   const [step, setStep] = useState<StepKey>('step_category');
   const [category, setCategory] = useState<CategoryId>(listing?.category ?? 'emlak');
@@ -58,17 +55,20 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const [subcategory, setSubcategory] = useState(listing?.subcategory ?? CATEGORIES[0].subs[0].id);
 
   /**
-   * Künye alanları React durumunda tutuluyor, `defaultValue` ile değil.
+   * Tüm alanlar React durumunda; DOM'dan hiçbir şey okunmuyor.
    *
-   * Sunucu eylemi yönlendirmeden dönerse (ilan limiti, hız sınırı, doğrulama
-   * hatası) React formu sıfırlıyor ve `defaultValue` ile yazılmış alanlar
-   * boşalıyor. İlk sürümde on bir künye alanı da denetimsizdi, yani tek bir
-   * hata mesajı o adımda doldurulan her şeyi siliyordu — testte birebir bu
-   * oldu.
+   * Bunun sebebi form gönderimiyle ilgili: sayfa `<form action={...}>`
+   * kullansaydı, sunucu eylemi yönlendirmeden döndüğünde (ilan limiti, hız
+   * sınırı, doğrulama hatası) React formu sıfırlıyor ve kullanıcının
+   * doldurduğu alanlar boşalıyor. Testte tam olarak bu oldu: bir hata
+   * mesajı Özellikler adımındaki on bir alanı birden sildi. Alanları
+   * denetimli yapmak metin kutularını kurtardı ama `select` alanlarını
+   * kurtarmadı, çünkü sıfırlama render'dan sonra çalışıyor ve React değeri
+   * değişmemiş gördüğü için DOM'a yeniden yazmıyor.
    *
-   * Denetimli yapmak metin alanlarını kurtarıyor ama `select` alanlarını
-   * kurtarmıyor; onlar için aşağıdaki `fields-${state.attempt}` anahtarı da
-   * gerekiyor.
+   * Bu yüzden native form gönderimi hiç kullanılmıyor: `submit()` FormData'yı
+   * doğrudan durumdan kuruyor. Sıfırlanacak bir form olmadığı için sorun da
+   * yok.
    */
   const [specs, setSpecs] = useState({
     model: listing?.model ?? '',
@@ -158,6 +158,35 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
     setStep(steps[Math.max(0, activeIndex - 1)]);
   }
 
+  /** Sunucuya gidecek veri tamamen durumdan kuruluyor; alan adları
+   *  actions.ts'in okuduğu adlarla aynı. */
+  function submit() {
+    const fd = new FormData();
+    fd.set('category', category);
+    fd.set('subcategory', activeSubcategory);
+    fd.set('title', title);
+    fd.set('price', price);
+    fd.set('description', description);
+    fd.set('city', city);
+    fd.set('district', district);
+    fd.set('phone', phone);
+    fd.set('photos', JSON.stringify(photos));
+    fd.set('brand', isVasita ? brand : '');
+    fd.set('features', JSON.stringify(isVasita ? features : []));
+
+    const coords = mapLatLng();
+    if (coords) {
+      fd.set('mapLat', String(coords.lat));
+      fd.set('mapLng', String(coords.lng));
+    }
+
+    if (isVasita) {
+      for (const [key, value] of Object.entries(specs)) fd.set(key, value);
+    }
+
+    startTransition(() => formAction(fd));
+  }
+
   async function onPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? []);
     e.target.value = '';
@@ -212,7 +241,6 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
     setPhotos((prev) => prev.filter((p) => p !== url));
   }
 
-  const latLng = mapLatLng();
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -247,22 +275,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
           </p>
         )}
 
-        <form action={formAction}>
-          <input type="hidden" name="category" value={category} />
-          <input type="hidden" name="mapLat" value={latLng ? String(latLng.lat) : ''} />
-          <input type="hidden" name="mapLng" value={latLng ? String(latLng.lng) : ''} />
-          <input type="hidden" name="photos" value={JSON.stringify(photos)} />
-          <input type="hidden" name="features" value={JSON.stringify(isVasita ? features : [])} />
-
-          {/* Sunucu eylemi bir hatayla donunce React formu sifirliyor. Denetimli
-              `input` alanlari durumlarindan geri geliyor ama `select`
-              alanlari gelmiyor: React'in sanal agaci dogru degeri bildigi
-              icin DOM'a yeniden yazmiyor, DOM ise sifirlanmis kaliyor.
-              Testte yil, yakit ve vites tam bu yuzden bosaliyordu.
-              Her yeni sonucta anahtar degisiyor ve alanlar durumdan yeniden
-              kuruluyor. Kullanici bu sirada son adimda oldugu icin odak
-              kaybi gorunmuyor. */}
-          <div key={`fields-${state.attempt}`}>
+        <div>
           <div className={activeStep === 'step_category' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_category', lang)}>
                 <select
@@ -553,7 +566,6 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               </Field>
               <p className="text-xs text-muted">{t('post_ad_expiry_hint', lang)}</p>
           </div>
-          </div>
 
           <div className="mt-6 flex justify-between">
             <button
@@ -575,7 +587,8 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
             ) : (
               <button
                 key="publish"
-                type="submit"
+                type="button"
+                onClick={submit}
                 disabled={pending || uploading}
                 className="rounded-lg bg-gradient-to-br from-primary to-primary-2 px-5 py-2 text-sm font-extrabold text-ink disabled:opacity-60"
               >
@@ -583,7 +596,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               </button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </main>
   );
