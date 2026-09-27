@@ -5,10 +5,79 @@ import { createClient } from '@/lib/supabase/server';
 import { t, type LangCode } from '@/lib/i18n';
 import { CATEGORIES, MAX_PHOTOS, type CategoryId } from '@/lib/constants';
 import { listingLimit, showcaseLimit, type PlanProfile } from '@/lib/plan';
+import {
+  ALL_FEATURE_IDS,
+  BODY_TYPES,
+  COLORS,
+  DRIVETRAINS,
+  FUELS,
+  TRANSMISSIONS,
+  YEAR_MIN,
+  yearMax,
+  type Option,
+} from '@/lib/vehicle';
 
 export type PostAdState = { error: string | null };
 
 const LISTING_RATE_LIMIT_SECONDS = 30;
+
+/** Sayısal künye alanı. Boş bırakılabiliyor; aralık dışı değer sessizce
+ *  atılıyor çünkü bunların hiçbiri ilanı geçersiz kılmıyor. */
+function specInt(formData: FormData, key: string, min: number, max: number): number | null {
+  const raw = String(formData.get(key) || '').trim();
+  if (!raw) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  const v = Math.round(n);
+  return v >= min && v <= max ? v : null;
+}
+
+/** Liste alanı. Tarayıcıdan gelen değer kendi seçeneklerimizden biri
+ *  olmalı — aksi halde künye tablosunda ham bir kimlik görünürdü. */
+function specEnum(formData: FormData, key: string, options: Option[]): string | null {
+  const raw = String(formData.get(key) || '').trim();
+  return options.some((o) => o.id === raw) ? raw : null;
+}
+
+/**
+ * Araç künyesi. Kategori araç değilse hepsi null'lanıyor: kullanıcı önce
+ * araç seçip alanları doldurup sonra kategoriyi değiştirirse formda o
+ * değerler hâlâ duruyor olurdu.
+ */
+function vehicleFields(formData: FormData, category: CategoryId) {
+  if (category !== 'vasita') {
+    return {
+      model: null, year: null, mileage_km: null, fuel: null, engine_cc: null,
+      power_hp: null, transmission: null, drivetrain: null, body_type: null,
+      color_exterior: null, color_interior: null, features: [] as string[],
+    };
+  }
+
+  let features: string[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get('features') || '[]'));
+    if (Array.isArray(parsed)) {
+      features = [...new Set(parsed.filter((f): f is string => typeof f === 'string' && ALL_FEATURE_IDS.includes(f)))];
+    }
+  } catch {
+    features = [];
+  }
+
+  return {
+    model: String(formData.get('model') || '').trim().slice(0, 80) || null,
+    year: specInt(formData, 'year', YEAR_MIN, yearMax()),
+    mileage_km: specInt(formData, 'mileageKm', 0, 2_000_000),
+    fuel: specEnum(formData, 'fuel', FUELS),
+    engine_cc: specInt(formData, 'engineCc', 0, 10_000),
+    power_hp: specInt(formData, 'powerHp', 0, 2_000),
+    transmission: specEnum(formData, 'transmission', TRANSMISSIONS),
+    drivetrain: specEnum(formData, 'drivetrain', DRIVETRAINS),
+    body_type: specEnum(formData, 'bodyType', BODY_TYPES),
+    color_exterior: specEnum(formData, 'colorExterior', COLORS),
+    color_interior: specEnum(formData, 'colorInterior', COLORS),
+    features,
+  };
+}
 
 export async function createListingAction(
   lang: LangCode,
@@ -124,6 +193,7 @@ export async function createListingAction(
       description,
       photos,
       brand: category === 'vasita' && brand ? brand : null,
+      ...vehicleFields(formData, category),
       is_urgent: useUrgent,
       is_highlighted: useHighlight,
       uses_showcase: useShowcase,
@@ -208,6 +278,7 @@ export async function updateListingAction(
       description,
       photos,
       brand: category === 'vasita' && brand ? brand : null,
+      ...vehicleFields(formData, category),
     })
     .eq('id', listingId)
     .eq('owner_id', user.id);

@@ -22,6 +22,22 @@ export type Listing = {
   uses_showcase: boolean;
   brand: string | null;
   store_id: string | null;
+
+  // Araç künyesi (migration_012). Hepsi null olabilir: emlak ve eşya
+  // ilanlarında hiç doldurulmuyor, araç ilanlarında da ilan sahibi
+  // bilmediği alanı boş bırakabiliyor.
+  model: string | null;
+  year: number | null;
+  mileage_km: number | null;
+  fuel: string | null;
+  engine_cc: number | null;
+  power_hp: number | null;
+  transmission: string | null;
+  drivetrain: string | null;
+  body_type: string | null;
+  color_exterior: string | null;
+  color_interior: string | null;
+  features: string[];
 };
 
 export type ListingFilters = {
@@ -89,4 +105,33 @@ export async function getListingById(id: string): Promise<Listing | null> {
     console.error('getListingById failed:', err);
     return null;
   }
+}
+
+/**
+ * Benzer ilanlar.
+ *
+ * Yakınlık sırası: aynı marka > aynı alt kategori > aynı kategori. Markayla
+ * başlanıyor çünkü bir Tiguan'a bakan kişinin ilgisini en çok başka bir
+ * Volkswagen çekiyor; marka yetmezse alt kategoriye, o da yetmezse
+ * kategoriye düşülüyor. Her aşama bir öncekinin bulduklarını koruyor.
+ */
+export async function getRelatedListings(listing: Listing, limit = 4): Promise<Listing[]> {
+  const picked = new Map<string, Listing>();
+
+  const steps: ListingFilters[] = [];
+  if (listing.brand) steps.push({ category: listing.category, brand: listing.brand });
+  steps.push({ category: listing.category, subcategory: listing.subcategory });
+  steps.push({ category: listing.category });
+
+  for (const filters of steps) {
+    if (picked.size >= limit) break;
+    const rows = await getListings(filters);
+    for (const row of rows) {
+      if (row.id === listing.id || picked.has(row.id)) continue;
+      picked.set(row.id, row);
+      if (picked.size >= limit) break;
+    }
+  }
+
+  return [...picked.values()];
 }

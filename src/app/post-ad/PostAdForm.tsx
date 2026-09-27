@@ -8,8 +8,26 @@ import { createClient } from '@/lib/supabase/client';
 import type { Listing } from '@/lib/listings';
 import type { CurrentUser } from '@/lib/get-user';
 import { compressImage } from '@/lib/compress-image';
+import {
+  BODY_TYPES,
+  COLORS,
+  DRIVETRAINS,
+  FEATURE_GROUPS,
+  FUELS,
+  TRANSMISSIONS,
+  YEAR_MIN,
+  vt,
+  yearMax,
+  type Option,
+} from '@/lib/vehicle';
 
-const STEP_KEYS = ['step_category', 'step_details', 'step_location', 'step_contact'] as const;
+/**
+ * Adımlar kategoriye göre değişiyor: künye adımı yalnız araç ilanında var.
+ * Bu yüzden adım numarası değil kimliği tutuluyor — araya bir adım girip
+ * çıkınca numara kayıyor, kimlik kaymıyor.
+ */
+const BASE_STEPS = ['step_category', 'step_details', 'step_location', 'step_contact'] as const;
+type StepKey = (typeof BASE_STEPS)[number] | 'step_specs';
 
 export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?: Listing; user: CurrentUser }) {
   const isEdit = !!listing;
@@ -18,7 +36,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
     : createListingAction.bind(null, lang);
   const [state, formAction, pending] = useActionState<PostAdState, FormData>(boundAction, { error: null });
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<StepKey>('step_category');
   const [category, setCategory] = useState<CategoryId>(listing?.category ?? 'emlak');
   const [title, setTitle] = useState(listing?.title ?? '');
   const [price, setPrice] = useState(listing ? String(listing.price) : '');
@@ -33,9 +51,27 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [brand, setBrand] = useState(listing?.brand ?? '');
+  const [features, setFeatures] = useState<string[]>(listing?.features ?? []);
 
   const cat = CATEGORIES.find((c) => c.id === category)!;
   const isEmlak = category === 'emlak';
+  const isVasita = category === 'vasita';
+
+  const steps: StepKey[] = isVasita
+    ? ['step_category', 'step_details', 'step_specs', 'step_location', 'step_contact']
+    : [...BASE_STEPS];
+
+  // Kategori araçtan başka bir şeye çevrilirse künye adımı listeden düşüyor
+  // ve o an orada duruyor olabiliriz. Effect yerine render sırasında
+  // düzeltiliyor; effect bir kare boş ekran gösterirdi.
+  const stepIndex = steps.indexOf(step);
+  const activeStep: StepKey = stepIndex === -1 ? 'step_details' : step;
+  const activeIndex = steps.indexOf(activeStep);
+  const isLast = activeIndex === steps.length - 1;
+
+  function toggleFeature(id: string) {
+    setFeatures((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
+  }
 
   function onMapClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -57,15 +93,13 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
     };
   }
 
-  function validateStep(n: number): string | null {
-    if (n === 2) {
+  function validateStep(key: StepKey): string | null {
+    if (key === 'step_details') {
       if (!title.trim() || !price || Number(price) < 0) return t('toast_fill_title_price', lang);
     }
-    if (n === 3) {
-      if (isEmlak) {
-        if (!district.trim()) return t('toast_district_required', lang);
-        if (!mapPin) return t('toast_map_required', lang);
-      }
+    if (key === 'step_location' && isEmlak) {
+      if (!district.trim()) return t('toast_district_required', lang);
+      if (!mapPin) return t('toast_map_required', lang);
     }
     return null;
   }
@@ -73,17 +107,17 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const [stepError, setStepError] = useState<string | null>(null);
 
   function next() {
-    const err = validateStep(step);
+    const err = validateStep(activeStep);
     if (err) {
       setStepError(err);
       return;
     }
     setStepError(null);
-    setStep((s) => Math.min(4, s + 1));
+    setStep(steps[Math.min(steps.length - 1, activeIndex + 1)]);
   }
   function back() {
     setStepError(null);
-    setStep((s) => Math.max(1, s - 1));
+    setStep(steps[Math.max(0, activeIndex - 1)]);
   }
 
   async function onPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -143,19 +177,18 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const latLng = mapLatLng();
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
+    <main className="mx-auto max-w-2xl px-6 py-10">
       <div className="rounded-2xl border border-glass-border bg-surface p-7">
         <h1 className="mb-5 text-2xl font-extrabold">{t(isEdit ? 'edit_ad_title' : 'post_ad_title', lang)}</h1>
 
         <div className="mb-6 flex gap-1.5">
-          {STEP_KEYS.map((key, i) => {
-            const n = i + 1;
-            const active = n === step;
-            const done = n < step;
+          {steps.map((key, i) => {
+            const active = i === activeIndex;
+            const done = i < activeIndex;
             return (
               <div
                 key={key}
-                onClick={() => done && setStep(n)}
+                onClick={() => done && setStep(key)}
                 className={`flex-1 rounded-lg border px-1 py-2.5 text-center text-xs font-bold ${
                   active
                     ? 'border-transparent bg-gradient-to-br from-primary to-primary-2 text-ink'
@@ -181,8 +214,9 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
           <input type="hidden" name="mapLat" value={latLng ? String(latLng.lat) : ''} />
           <input type="hidden" name="mapLng" value={latLng ? String(latLng.lng) : ''} />
           <input type="hidden" name="photos" value={JSON.stringify(photos)} />
+          <input type="hidden" name="features" value={JSON.stringify(isVasita ? features : [])} />
 
-          <div className={step === 1 ? 'space-y-4' : 'hidden'}>
+          <div className={activeStep === 'step_category' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_category', lang)}>
                 <select
                   value={category}
@@ -228,7 +262,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               )}
           </div>
 
-          <div className={step === 2 ? 'space-y-4' : 'hidden'}>
+          <div className={activeStep === 'step_details' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_title', lang)}>
                 <input
                   name="title"
@@ -289,7 +323,104 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               </Field>
           </div>
 
-          <div className={step === 3 ? 'space-y-4' : 'hidden'}>
+          {/* Araç künyesi. Kategori araç değilken hiç basılmıyor — gizli
+              alanlar formda kalsa sunucu tarafı yine yok sayardı ama
+              kullanıcı DOM'da alakasız alanlar görürdü. */}
+          {isVasita && (
+            <div className={activeStep === 'step_specs' ? 'space-y-4' : 'hidden'}>
+              <p className="text-xs text-muted">
+                {t('specs_hint', lang)} {t('specs_optional', lang)}
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label={t('label_model', lang)}>
+                  <input
+                    name="model"
+                    defaultValue={listing?.model ?? ''}
+                    placeholder="Tiguan R-Line"
+                    className={INPUT}
+                  />
+                </Field>
+                <Field label={t('label_year', lang)}>
+                  <select name="year" defaultValue={listing?.year ?? ''} className={INPUT}>
+                    <option value="" className="text-black">—</option>
+                    {YEARS.map((y) => (
+                      <option key={y} value={y} className="text-black">
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label={t('label_mileage', lang)}>
+                  <input
+                    name="mileageKm"
+                    type="number"
+                    min={0}
+                    max={2000000}
+                    defaultValue={listing?.mileage_km ?? ''}
+                    placeholder="150000"
+                    className={INPUT}
+                  />
+                </Field>
+                <SpecSelect name="fuel" label={t('label_fuel', lang)} options={FUELS} value={listing?.fuel} lang={lang} />
+                <Field label={t('label_engine', lang)}>
+                  <input
+                    name="engineCc"
+                    type="number"
+                    min={0}
+                    max={10000}
+                    defaultValue={listing?.engine_cc ?? ''}
+                    placeholder="2000"
+                    className={INPUT}
+                  />
+                </Field>
+                <Field label={t('label_power', lang)}>
+                  <input
+                    name="powerHp"
+                    type="number"
+                    min={0}
+                    max={2000}
+                    defaultValue={listing?.power_hp ?? ''}
+                    placeholder="190"
+                    className={INPUT}
+                  />
+                </Field>
+                <SpecSelect name="transmission" label={t('label_transmission', lang)} options={TRANSMISSIONS} value={listing?.transmission} lang={lang} />
+                <SpecSelect name="drivetrain" label={t('label_drivetrain', lang)} options={DRIVETRAINS} value={listing?.drivetrain} lang={lang} />
+                <SpecSelect name="bodyType" label={t('label_body_type', lang)} options={BODY_TYPES} value={listing?.body_type} lang={lang} />
+                <SpecSelect name="colorExterior" label={t('label_color_exterior', lang)} options={COLORS} value={listing?.color_exterior} lang={lang} />
+                <SpecSelect name="colorInterior" label={t('label_color_interior', lang)} options={COLORS} value={listing?.color_interior} lang={lang} />
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold text-[#cbc6ba]">{t('label_features', lang)}</p>
+                <div className="space-y-4">
+                  {FEATURE_GROUPS.map((group) => (
+                    <div key={group.id} className="rounded-xl border border-glass-border bg-white/4 p-3.5">
+                      <p className="mb-2 text-xs font-extrabold tracking-wide text-primary uppercase">
+                        {vt(group.title, lang)}
+                      </p>
+                      <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
+                        {group.items.map((item) => (
+                          <label key={item.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={features.includes(item.id)}
+                              onChange={() => toggleFeature(item.id)}
+                              className="h-4 w-4 shrink-0 accent-[#fdd202]"
+                            />
+                            <span className="min-w-0 truncate">{vt(item.label, lang)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={activeStep === 'step_location' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_city', lang)} required>
                 <select
                   name="city"
@@ -344,7 +475,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               <p className="text-xs text-muted">{isEmlak ? t('location_hint_required', lang) : t('location_hint_optional', lang)}</p>
           </div>
 
-          <div className={step === 4 ? 'space-y-4' : 'hidden'}>
+          <div className={activeStep === 'step_contact' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_phone', lang)}>
                 <input
                   name="phone"
@@ -361,11 +492,11 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
             <button
               type="button"
               onClick={back}
-              className={`rounded-lg border border-glass-border bg-white/6 px-4 py-2 text-sm font-bold ${step === 1 ? 'invisible' : ''}`}
+              className={`rounded-lg border border-glass-border bg-white/6 px-4 py-2 text-sm font-bold ${activeIndex === 0 ? 'invisible' : ''}`}
             >
               {t('btn_back', lang)}
             </button>
-            {step < 4 ? (
+            {!isLast ? (
               <button
                 key="next"
                 type="button"
@@ -388,6 +519,39 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
         </form>
       </div>
     </main>
+  );
+}
+
+const INPUT = 'w-full rounded-lg border border-glass-border bg-white/5 px-3 py-2.5 text-sm';
+
+// En yeniden en eskiye: bir aracı satan kişi çoğunlukla son yıllardan birini
+// seçiyor, listeyi 1950'den başlatmak her seferinde uzun bir kaydırma demek.
+const YEARS = Array.from({ length: yearMax() - YEAR_MIN + 1 }, (_, i) => yearMax() - i);
+
+function SpecSelect({
+  name,
+  label,
+  options,
+  value,
+  lang,
+}: {
+  name: string;
+  label: string;
+  options: Option[];
+  value?: string | null;
+  lang: LangCode;
+}) {
+  return (
+    <Field label={label}>
+      <select name={name} defaultValue={value ?? ''} className={INPUT}>
+        <option value="" className="text-black">—</option>
+        {options.map((o) => (
+          <option key={o.id} value={o.id} className="text-black">
+            {vt(o.label, lang)}
+          </option>
+        ))}
+      </select>
+    </Field>
   );
 }
 
