@@ -34,7 +34,10 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const boundAction = isEdit
     ? updateListingAction.bind(null, lang, listing.id)
     : createListingAction.bind(null, lang);
-  const [state, formAction, pending] = useActionState<PostAdState, FormData>(boundAction, { error: null });
+  const [state, formAction, pending] = useActionState<PostAdState, FormData>(boundAction, {
+    error: null,
+    attempt: 0,
+  });
 
   const [step, setStep] = useState<StepKey>('step_category');
   const [category, setCategory] = useState<CategoryId>(listing?.category ?? 'emlak');
@@ -58,10 +61,14 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
    * Künye alanları React durumunda tutuluyor, `defaultValue` ile değil.
    *
    * Sunucu eylemi yönlendirmeden dönerse (ilan limiti, hız sınırı, doğrulama
-   * hatası) React formu sıfırlıyor: denetimli alanlar durumlarından geri
-   * geliyor, denetimsiz alanlar `defaultValue`'ya düşüyor. İlk sürümde on bir
-   * künye alanı denetimsizdi, yani tek bir hata mesajı kullanıcının o adımda
-   * doldurduğu her şeyi siliyordu — testte birebir bu oldu.
+   * hatası) React formu sıfırlıyor ve `defaultValue` ile yazılmış alanlar
+   * boşalıyor. İlk sürümde on bir künye alanı da denetimsizdi, yani tek bir
+   * hata mesajı o adımda doldurulan her şeyi siliyordu — testte birebir bu
+   * oldu.
+   *
+   * Denetimli yapmak metin alanlarını kurtarıyor ama `select` alanlarını
+   * kurtarmıyor; onlar için aşağıdaki `fields-${state.attempt}` anahtarı da
+   * gerekiyor.
    */
   const [specs, setSpecs] = useState({
     model: listing?.model ?? '',
@@ -247,6 +254,15 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
           <input type="hidden" name="photos" value={JSON.stringify(photos)} />
           <input type="hidden" name="features" value={JSON.stringify(isVasita ? features : [])} />
 
+          {/* Sunucu eylemi bir hatayla donunce React formu sifirliyor. Denetimli
+              `input` alanlari durumlarindan geri geliyor ama `select`
+              alanlari gelmiyor: React'in sanal agaci dogru degeri bildigi
+              icin DOM'a yeniden yazmiyor, DOM ise sifirlanmis kaliyor.
+              Testte yil, yakit ve vites tam bu yuzden bosaliyordu.
+              Her yeni sonucta anahtar degisiyor ve alanlar durumdan yeniden
+              kuruluyor. Kullanici bu sirada son adimda oldugu icin odak
+              kaybi gorunmuyor. */}
+          <div key={`fields-${state.attempt}`}>
           <div className={activeStep === 'step_category' ? 'space-y-4' : 'hidden'}>
               <Field label={t('label_category', lang)}>
                 <select
@@ -536,6 +552,7 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
                 />
               </Field>
               <p className="text-xs text-muted">{t('post_ad_expiry_hint', lang)}</p>
+          </div>
           </div>
 
           <div className="mt-6 flex justify-between">
