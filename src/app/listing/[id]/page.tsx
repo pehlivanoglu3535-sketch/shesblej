@@ -11,7 +11,6 @@ import PhotoGallery from './PhotoGallery';
 import MessageForm from './MessageForm';
 import ReportButton from './ReportButton';
 import ShareButtons from './ShareButtons';
-import LoanCalculator from './LoanCalculator';
 import FavoriteButton from '@/components/FavoriteButton';
 import CategoryIcon from '@/components/CategoryIcon';
 import ListingCard from '@/components/ListingCard';
@@ -215,7 +214,6 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
           )}
 
           {isVehicle && <VehicleFeatures features={listing.features} lang={lang} />}
-          {isVehicle && <LoanCalculator price={Number(listing.price)} lang={lang} />}
         </div>
 
         <aside className="space-y-5">
