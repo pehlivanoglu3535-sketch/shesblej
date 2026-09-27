@@ -3,7 +3,6 @@ import { getListings } from '@/lib/listings';
 import { CITY_COORDS, type CategoryId } from '@/lib/constants';
 import { t, catName } from '@/lib/i18n';
 import Hero from '@/components/Hero';
-import CategoryCards from '@/components/CategoryCards';
 import Filters from '@/components/Filters';
 import ListingCard from '@/components/ListingCard';
 import TestimonialsSection from '@/components/TestimonialsSection';
@@ -73,7 +72,6 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
   return (
     <main className="mx-auto max-w-6xl px-6 py-7">
       {!category && !query && <Hero lang={lang} />}
-      {!category && !query && <CategoryCards lang={lang} />}
 
       <Filters lang={lang} category={category} />
 
