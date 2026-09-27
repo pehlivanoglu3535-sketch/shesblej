@@ -162,9 +162,16 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
             href={`/store/${store.slug}`}
             className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-glass-border bg-white/4 px-4 py-3 text-sm hover:border-primary/40 hover:bg-white/6"
           >
-            <span>
-              <strong className="block font-bold">{store.name}</strong>
-              <span className="text-muted">{t('store_see_all', lang)}</span>
+            <span className="flex min-w-0 items-center gap-3">
+              {store.logo_url && (
+                <span className="flex h-10 w-[104px] shrink-0 items-center justify-center rounded-lg bg-white/5 px-2">
+                  <img src={store.logo_url} alt={store.name} className="h-5 w-auto object-contain" />
+                </span>
+              )}
+              <span className="min-w-0">
+                <strong className="block font-bold">{store.name}</strong>
+                <span className="text-muted">{t('store_see_all', lang)}</span>
+              </span>
             </span>
             <span className="text-lg text-primary">›</span>
           </a>

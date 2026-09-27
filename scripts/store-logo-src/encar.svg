@@ -1,0 +1,22 @@
+<!--
+  Encar International kelime markası.
+
+  global.encar.com'un logosu bir görsel dosya değil — sayfada canlı metin
+  olarak duruyor (span.Header_logo_encar + span.Header_logo_intl) ve sitede
+  indirilebilir bir logo varlığı yok. Bu yüzden kelime markası oradaki
+  gerçek biçimlendirmeyle yeniden kuruldu: "Encar" marka kırmızısı
+  #D72E36, devamı ikinci renk, ağırlık 600, sıkı harf aralığı.
+
+  Sitedeki logoda marka adının yanında ayrıca "International" yazıyor; o
+  kelime buraya alınmadı. Alınsaydı kelime markasının en-boy oranı 10:1'e
+  çıkıyor ve ortak tuvalde diğer iki logonun yarısı yükseklikte kalıyordu —
+  yani simetri bozuluyordu. Mağazanın tam adı kartın metninde zaten yazıyor.
+
+  Yazı tipi: kaynakta Pretendard. Sunucuda o yazı tipi yok, en yakın
+  sistem karşılığı kullanılıyor.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200">
+  <text x="20" y="145"
+        font-family="Segoe UI Semibold, Segoe UI, Malgun Gothic, Arial, sans-serif"
+        font-size="120" font-weight="600" letter-spacing="-2.25" fill="#D72E36">Encar</text>
+</svg>

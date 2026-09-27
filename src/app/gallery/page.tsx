@@ -51,12 +51,21 @@ export default async function GalleryPage() {
               <Link
                 key={s.id}
                 href={`/store/${s.slug}`}
-                className="flex items-center gap-3 rounded-xl border border-glass-border bg-surface p-4 hover:border-primary/40"
+                className="flex flex-col overflow-hidden rounded-xl border border-glass-border bg-surface hover:border-primary/40"
               >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-2 text-lg font-extrabold text-ink">
-                  {s.name.slice(0, 1).toUpperCase()}
+                {/* Logo paneli her kartta aynı ölçüde. Logoların kendisi de
+                    aynı tuvalde üretildiği (scripts/store-logos.mjs) için
+                    sabit yükseklik vermek hizalama için yeterli. */}
+                <span className="flex h-20 items-center justify-center bg-white/5 px-5">
+                  {s.logo_url ? (
+                    <img src={s.logo_url} alt={s.name} className="h-10 w-auto object-contain" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-2 text-lg font-extrabold text-ink">
+                      {s.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 px-4 py-3">
                   <span className="block truncate font-bold">{s.name}</span>
                   <span className="block text-xs text-muted">
                     {s.listingCount} {t('listing_count_suffix', lang)}

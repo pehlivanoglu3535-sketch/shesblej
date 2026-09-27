@@ -27,7 +27,12 @@ export default async function StorePage({ params }: PageProps<'/store/[slug]'>) 
       <div className="mb-7 rounded-2xl border border-glass-border bg-surface p-6">
         <div className="flex flex-wrap items-center gap-4">
           {store.logo_url ? (
-            <img src={store.logo_url} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            // Logolar geniş kelime markası (600x160); kare bir kutuya
+            // kırpmak hepsini okunmaz yapardı, o yüzden kendi oranında
+            // duruyor ve yükseklik sabit.
+            <span className="flex h-16 w-[180px] shrink-0 items-center justify-center rounded-xl bg-white/5 px-4">
+              <img src={store.logo_url} alt={store.name} className="h-9 w-auto object-contain" />
+            </span>
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-2 text-2xl font-extrabold text-ink">
               {store.name.slice(0, 1).toUpperCase()}
