@@ -8,6 +8,7 @@ import { categoryPhotoUri, listingHue } from '@/lib/photos';
 import { t } from '@/lib/i18n';
 import DeleteButton from '../listing/[id]/DeleteButton';
 import CategoryIcon from '@/components/CategoryIcon';
+import RepublishButton from './RepublishButton';
 
 export default async function MyListingsPage() {
   const lang = await getLang();
@@ -65,7 +66,8 @@ export default async function MyListingsPage() {
                     </span>
                   </div>
                 </div>
-                <div className="flex flex-shrink-0 gap-2">
+                <div className="flex flex-shrink-0 items-start gap-2">
+                  {expired && <RepublishButton listingId={listing.id} lang={lang} />}
                   <Link
                     href={`/post-ad/edit/${listing.id}`}
                     className="rounded-lg border border-glass-border bg-white/6 px-3 py-1.5 text-xs font-bold"
