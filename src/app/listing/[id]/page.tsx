@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { getLang } from '@/lib/get-lang';
 import { getListingById, daysRemaining } from '@/lib/listings';
 import { getCurrentUser } from '@/lib/get-user';
-import { CATEGORIES } from '@/lib/constants';
 import { categoryPhotoUri, listingHue } from '@/lib/photos';
 import { t, catName, subName } from '@/lib/i18n';
 import { createClient } from '@/lib/supabase/server';
@@ -11,6 +10,7 @@ import PhotoGallery from './PhotoGallery';
 import MessageForm from './MessageForm';
 import ReportButton from './ReportButton';
 import FavoriteButton from '@/components/FavoriteButton';
+import CategoryIcon from '@/components/CategoryIcon';
 
 export default async function ListingDetailPage({ params }: PageProps<'/listing/[id]'>) {
   const { id } = await params;
@@ -20,7 +20,6 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
 
   const user = await getCurrentUser();
   const isOwner = user && listing.owner_id === user.id;
-  const icon = CATEGORIES.find((c) => c.id === listing.category)?.icon ?? '📦';
   const hasPhoto = listing.photos && listing.photos.length > 0;
   const mainPhoto = hasPhoto ? listing.photos[0] : categoryPhotoUri(listing.category);
   const days = daysRemaining(listing.expires_at);
@@ -62,10 +61,10 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
               style={{ filter: `hue-rotate(${listingHue(listing.id)}deg) saturate(1.1)` }}
             />
             <span
-              className="absolute top-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full text-sm"
-              style={{ background: 'rgba(255,255,255,.9)' }}
+              className="absolute top-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full text-ink"
+              style={{ background: 'rgba(253,210,2,.92)' }}
             >
-              {icon}
+              <CategoryIcon id={listing.category} />
             </span>
           </div>
         )}

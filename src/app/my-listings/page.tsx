@@ -5,9 +5,9 @@ import { getLang } from '@/lib/get-lang';
 import { getCurrentUser } from '@/lib/get-user';
 import { getListings, daysRemaining } from '@/lib/listings';
 import { categoryPhotoUri, listingHue } from '@/lib/photos';
-import { CATEGORIES } from '@/lib/constants';
 import { t } from '@/lib/i18n';
 import DeleteButton from '../listing/[id]/DeleteButton';
+import CategoryIcon from '@/components/CategoryIcon';
 
 export default async function MyListingsPage() {
   const lang = await getLang();
@@ -28,7 +28,6 @@ export default async function MyListingsPage() {
         <div className="space-y-3">
           {listings.map((listing) => {
             const hasPhoto = listing.photos && listing.photos.length > 0;
-            const icon = CATEGORIES.find((c) => c.id === listing.category)?.icon ?? '📦';
             const days = daysRemaining(listing.expires_at);
             const expired = days <= 0;
             return (
@@ -49,8 +48,12 @@ export default async function MyListingsPage() {
                   )}
                 </Link>
                 <div className="min-w-0 flex-1">
-                  <Link href={`/listing/${listing.id}`} className="block truncate text-sm font-semibold hover:underline">
-                    {icon} {listing.title}
+                  <Link
+                    href={`/listing/${listing.id}`}
+                    className="flex items-center gap-1.5 truncate text-sm font-semibold hover:underline"
+                  >
+                    <CategoryIcon id={listing.category} className="shrink-0 text-primary" />
+                    <span className="truncate">{listing.title}</span>
                   </Link>
                   <div className="mt-1 flex items-center gap-2 text-xs text-muted">
                     <span className="font-bold text-primary">€{Number(listing.price).toLocaleString('tr-TR')}</span>

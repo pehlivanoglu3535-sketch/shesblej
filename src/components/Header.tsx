@@ -27,9 +27,19 @@ export default function Header({
   const [query, setQuery] = useState('');
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
 
-  useEffect(() => {
+  // Sayaç iki kaynaktan besleniyor: sunucunun her gezinmede verdiği sayı ve
+  // Realtime'dan gelen artışlar. Sunucu yeni bir sayı verdiğinde yereli
+  // sıfırlamak gerekiyor.
+  //
+  // Bunu useEffect ile yapmak React'in uyardığı kalıp: efekt render bittikten
+  // sonra çalışıp ikinci bir render tetikliyor ve kullanıcı bir an eski sayıyı
+  // görüyor. Belgelerin önerdiği yol, prop değişimini render sırasında
+  // yakalamak — React bu durumda ekrana hiç basmadan yeniden render ediyor.
+  const [syncedFrom, setSyncedFrom] = useState(initialUnreadCount);
+  if (syncedFrom !== initialUnreadCount) {
+    setSyncedFrom(initialUnreadCount);
     setUnreadCount(initialUnreadCount);
-  }, [initialUnreadCount]);
+  }
 
   useEffect(() => {
     if (!userId) return;

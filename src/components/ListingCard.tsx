@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { categoryPhotoUri, listingHue } from '@/lib/photos';
-import { CATEGORIES } from '@/lib/constants';
 import { daysRemaining, type Listing } from '@/lib/listings';
 import { t, type LangCode } from '@/lib/i18n';
+import CategoryIcon from '@/components/CategoryIcon';
 
 export default function ListingCard({ listing, lang }: { listing: Listing; lang: LangCode }) {
   const hasPhoto = listing.photos && listing.photos.length > 0;
-  const icon = CATEGORIES.find((c) => c.id === listing.category)?.icon ?? '📦';
   const days = daysRemaining(listing.expires_at);
 
   return (
@@ -54,10 +53,10 @@ export default function ListingCard({ listing, lang }: { listing: Listing; lang:
           </span>
         )}
         <span
-          className="absolute top-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full text-sm shadow"
-          style={{ background: 'rgba(255,255,255,.9)' }}
+          className="absolute top-2.5 right-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full text-ink shadow"
+          style={{ background: 'rgba(253,210,2,.92)' }}
         >
-          {icon}
+          <CategoryIcon id={listing.category} />
         </span>
         <span
           className="absolute left-2.5 bottom-2.5 rounded-lg border border-primary/25 px-3 py-1.5 text-[14.5px] font-extrabold text-primary backdrop-blur-sm"
@@ -67,7 +66,11 @@ export default function ListingCard({ listing, lang }: { listing: Listing; lang:
         </span>
       </div>
       <div className="p-3.5">
-        <p className="mb-2 min-h-[34px] text-sm font-semibold">{listing.title}</p>
+        {/* Başlık tam iki satıra sabitleniyor. `min-h` tek satırlık başlıkları
+            dengeliyordu ama uzun olanları sınırlamıyordu: kullanıcıların yazdığı
+            üç satırlık başlık kartı uzatıp ızgaradaki komşularıyla hizasını
+            bozuyor. Kırpmak, her kartın aynı yükseklikte kalmasını sağlıyor. */}
+        <p className="mb-2 line-clamp-2 min-h-[34px] text-sm font-semibold">{listing.title}</p>
         <div className="flex justify-between text-xs text-muted">
           <span>{listing.city}</span>
           <span>{new Date(listing.created_at).toISOString().slice(0, 10)}</span>

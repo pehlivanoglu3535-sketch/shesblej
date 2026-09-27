@@ -14,6 +14,40 @@ function svgToDataUri(svg: string): string {
 
 const GOLD = '#fdd202';
 
+/**
+ * Üç çizimi ortak bir kutuya hizalar.
+ *
+ * Çizimler elle yazıldığı için birbirini tutmuyordu. Ölçüldüğünde (bkz.
+ * scripts/measure-category-art.mjs) vasıta 176 birim genişken emlak 114'tü;
+ * ikinci el eşya 26 birim aşağıda duruyor ve alt kenarı 241'e inip zemin
+ * çizgisini (y=232) kesiyordu. Kartlar yan yana durduğu için bu fark gözle
+ * görülüyordu.
+ *
+ * Çözüm çizimleri yeniden çizmek değil, her birini ölçülen sınırlarından
+ * hesaplanan bir dönüşümle aynı kutuya oturtmak: yatay merkez x=200, alt kenar
+ * y=212, en fazla 172x106 birim — en-boy oranı korunarak. Araba doğal olarak
+ * daha geniş ve basık kalıyor, ama üçü de aynı zemine basıyor ve aynı görsel
+ * ağırlıkta.
+ *
+ * `stroke-width` ölçekle birlikte değişeceği için bölünerek telafi ediliyor,
+ * yoksa küçültülen çizimin çizgisi incelirdi.
+ */
+function place(inner: string, box: { minX: number; maxX: number; minY: number; maxY: number }): string {
+  const MAX_W = 160;
+  const MAX_H = 106;
+  const CENTER_X = 200;
+  const BASE_Y = 212;
+  const STROKE = 2.6;
+
+  const w = box.maxX - box.minX;
+  const h = box.maxY - box.minY;
+  const s = Math.min(MAX_W / w, MAX_H / h);
+  const tx = CENTER_X - s * ((box.minX + box.maxX) / 2);
+  const ty = BASE_Y - s * box.maxY;
+
+  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})" stroke-width="${(STROKE / s).toFixed(2)}">${inner}</g>`;
+}
+
 /** Ortak zemin: koyu degrade + üst-orta bölgede yumuşak altın parıltı. */
 function frame(inner: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
@@ -38,7 +72,7 @@ function frame(inner: string): string {
 }
 
 function emlakScene(): string {
-  return frame(`
+  return frame(place(`
     <path d="M150 210 V128 l34 -22 34 22 V210"/>
     <path d="M218 210 V150 h42 v60"/>
     <rect x="167" y="146" width="16" height="16" rx="2" stroke-opacity="0.75"/>
@@ -46,27 +80,27 @@ function emlakScene(): string {
     <rect x="167" y="174" width="16" height="16" rx="2" stroke-opacity="0.45"/>
     <rect x="231" y="166" width="14" height="14" rx="2" stroke-opacity="0.6"/>
     <path d="M190 210 v-22 h12 v22" stroke-opacity="0.85"/>
-  `);
+  `, { minX: 148, maxX: 261, minY: 105, maxY: 211 }));
 }
 
 function vasitaScene(): string {
-  return frame(`
+  return frame(place(`
     <path d="M118 188 v-18 q0 -8 9 -11 l24 -8 18 -22 q4 -5 11 -5 h48 q7 0 11 5 l18 22 24 8 q9 3 9 11 v18"/>
     <path d="M160 149 h80" stroke-opacity="0.55"/>
     <circle cx="154" cy="190" r="17"/>
     <circle cx="246" cy="190" r="17"/>
     <path d="M171 190 h58" stroke-opacity="0.35"/>
     <path d="M124 164 h14 M262 164 h14" stroke-opacity="0.6"/>
-  `);
+  `, { minX: 116, maxX: 291, minY: 122, maxY: 208 }));
 }
 
 function esyaScene(): string {
-  return frame(`
+  return frame(place(`
     <path d="M140 156 l60 -28 60 28 v56 l-60 28 -60 -28 z"/>
     <path d="M140 156 l60 28 60 -28" stroke-opacity="0.8"/>
     <path d="M200 184 v56" stroke-opacity="0.8"/>
     <path d="M170 142 l60 28" stroke-opacity="0.4"/>
-  `);
+  `, { minX: 138, maxX: 261, minY: 127, maxY: 241 }));
 }
 
 const CATEGORY_PHOTO_CACHE: Record<string, string> = {};
