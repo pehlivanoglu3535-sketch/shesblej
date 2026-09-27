@@ -52,6 +52,32 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [brand, setBrand] = useState(listing?.brand ?? '');
   const [features, setFeatures] = useState<string[]>(listing?.features ?? []);
+  const [subcategory, setSubcategory] = useState(listing?.subcategory ?? CATEGORIES[0].subs[0].id);
+
+  /**
+   * Künye alanları React durumunda tutuluyor, `defaultValue` ile değil.
+   *
+   * Sunucu eylemi yönlendirmeden dönerse (ilan limiti, hız sınırı, doğrulama
+   * hatası) React formu sıfırlıyor: denetimli alanlar durumlarından geri
+   * geliyor, denetimsiz alanlar `defaultValue`'ya düşüyor. İlk sürümde on bir
+   * künye alanı denetimsizdi, yani tek bir hata mesajı kullanıcının o adımda
+   * doldurduğu her şeyi siliyordu — testte birebir bu oldu.
+   */
+  const [specs, setSpecs] = useState({
+    model: listing?.model ?? '',
+    year: listing?.year != null ? String(listing.year) : '',
+    mileageKm: listing?.mileage_km != null ? String(listing.mileage_km) : '',
+    fuel: listing?.fuel ?? '',
+    engineCc: listing?.engine_cc != null ? String(listing.engine_cc) : '',
+    powerHp: listing?.power_hp != null ? String(listing.power_hp) : '',
+    transmission: listing?.transmission ?? '',
+    drivetrain: listing?.drivetrain ?? '',
+    bodyType: listing?.body_type ?? '',
+    colorExterior: listing?.color_exterior ?? '',
+    colorInterior: listing?.color_interior ?? '',
+  });
+  const setSpec = (key: keyof typeof specs, value: string) =>
+    setSpecs((prev) => ({ ...prev, [key]: value }));
 
   const cat = CATEGORIES.find((c) => c.id === category)!;
   const isEmlak = category === 'emlak';
@@ -60,6 +86,11 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
   const steps: StepKey[] = isVasita
     ? ['step_category', 'step_details', 'step_specs', 'step_location', 'step_contact']
     : [...BASE_STEPS];
+
+  // Alt kategori kategoriye bağlı. Kategori değişince onChange zaten
+  // sıfırlıyor, ama düzenleme modunda gelen ilan arada başka bir kategoriye
+  // taşınmış olabilir; render sırasında kırpmak o durumu da kapatıyor.
+  const activeSubcategory = cat.subs.some((s) => s.id === subcategory) ? subcategory : cat.subs[0].id;
 
   // Kategori araçtan başka bir şeye çevrilirse künye adımı listeden düşüyor
   // ve o an orada duruyor olabiliriz. Effect yerine render sırasında
@@ -220,7 +251,13 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               <Field label={t('label_category', lang)}>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as CategoryId)}
+                  onChange={(e) => {
+                    const next = e.target.value as CategoryId;
+                    setCategory(next);
+                    // Alt kategori kategoriye bağlı; taşınan bir değer
+                    // sunucuda reddedilirdi.
+                    setSubcategory(CATEGORIES.find((c) => c.id === next)!.subs[0].id);
+                  }}
                   className="w-full rounded-lg border border-glass-border bg-white/5 px-3 py-2.5 text-sm"
                 >
                   {CATEGORIES.map((c) => (
@@ -233,9 +270,13 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
               <Field label={t('label_subcategory', lang)}>
                 <select
                   name="subcategory"
-                  defaultValue={listing?.subcategory ?? cat.subs[0].id}
+                  value={activeSubcategory}
+                  onChange={(e) => setSubcategory(e.target.value)}
                   className="w-full rounded-lg border border-glass-border bg-white/5 px-3 py-2.5 text-sm"
                 >
+                  {/* Seçili değer bu kategoriye ait değilse tarayıcı ilk
+                      seçeneği gösterir ama durum eski değeri taşımaya devam
+                      eder; o yüzden liste değil durum belirleyici. */}
                   {cat.subs.map((s) => (
                     <option key={s.id} value={s.id} className="text-black">
                       {subName(s.id, lang)}
@@ -336,13 +377,19 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
                 <Field label={t('label_model', lang)}>
                   <input
                     name="model"
-                    defaultValue={listing?.model ?? ''}
+                    value={specs.model}
+                    onChange={(e) => setSpec('model', e.target.value)}
                     placeholder="Tiguan R-Line"
                     className={INPUT}
                   />
                 </Field>
                 <Field label={t('label_year', lang)}>
-                  <select name="year" defaultValue={listing?.year ?? ''} className={INPUT}>
+                  <select
+                    name="year"
+                    value={specs.year}
+                    onChange={(e) => setSpec('year', e.target.value)}
+                    className={INPUT}
+                  >
                     <option value="" className="text-black">—</option>
                     {YEARS.map((y) => (
                       <option key={y} value={y} className="text-black">
@@ -357,19 +404,21 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
                     type="number"
                     min={0}
                     max={2000000}
-                    defaultValue={listing?.mileage_km ?? ''}
+                    value={specs.mileageKm}
+                    onChange={(e) => setSpec('mileageKm', e.target.value)}
                     placeholder="150000"
                     className={INPUT}
                   />
                 </Field>
-                <SpecSelect name="fuel" label={t('label_fuel', lang)} options={FUELS} value={listing?.fuel} lang={lang} />
+                <SpecSelect name="fuel" label={t('label_fuel', lang)} options={FUELS} value={specs.fuel} onChange={(v) => setSpec('fuel', v)} lang={lang} />
                 <Field label={t('label_engine', lang)}>
                   <input
                     name="engineCc"
                     type="number"
                     min={0}
                     max={10000}
-                    defaultValue={listing?.engine_cc ?? ''}
+                    value={specs.engineCc}
+                    onChange={(e) => setSpec('engineCc', e.target.value)}
                     placeholder="2000"
                     className={INPUT}
                   />
@@ -380,16 +429,17 @@ export default function PostAdForm({ lang, listing }: { lang: LangCode; listing?
                     type="number"
                     min={0}
                     max={2000}
-                    defaultValue={listing?.power_hp ?? ''}
+                    value={specs.powerHp}
+                    onChange={(e) => setSpec('powerHp', e.target.value)}
                     placeholder="190"
                     className={INPUT}
                   />
                 </Field>
-                <SpecSelect name="transmission" label={t('label_transmission', lang)} options={TRANSMISSIONS} value={listing?.transmission} lang={lang} />
-                <SpecSelect name="drivetrain" label={t('label_drivetrain', lang)} options={DRIVETRAINS} value={listing?.drivetrain} lang={lang} />
-                <SpecSelect name="bodyType" label={t('label_body_type', lang)} options={BODY_TYPES} value={listing?.body_type} lang={lang} />
-                <SpecSelect name="colorExterior" label={t('label_color_exterior', lang)} options={COLORS} value={listing?.color_exterior} lang={lang} />
-                <SpecSelect name="colorInterior" label={t('label_color_interior', lang)} options={COLORS} value={listing?.color_interior} lang={lang} />
+                <SpecSelect name="transmission" label={t('label_transmission', lang)} options={TRANSMISSIONS} value={specs.transmission} onChange={(v) => setSpec('transmission', v)} lang={lang} />
+                <SpecSelect name="drivetrain" label={t('label_drivetrain', lang)} options={DRIVETRAINS} value={specs.drivetrain} onChange={(v) => setSpec('drivetrain', v)} lang={lang} />
+                <SpecSelect name="bodyType" label={t('label_body_type', lang)} options={BODY_TYPES} value={specs.bodyType} onChange={(v) => setSpec('bodyType', v)} lang={lang} />
+                <SpecSelect name="colorExterior" label={t('label_color_exterior', lang)} options={COLORS} value={specs.colorExterior} onChange={(v) => setSpec('colorExterior', v)} lang={lang} />
+                <SpecSelect name="colorInterior" label={t('label_color_interior', lang)} options={COLORS} value={specs.colorInterior} onChange={(v) => setSpec('colorInterior', v)} lang={lang} />
               </div>
 
               <div>
@@ -533,17 +583,19 @@ function SpecSelect({
   label,
   options,
   value,
+  onChange,
   lang,
 }: {
   name: string;
   label: string;
   options: Option[];
-  value?: string | null;
+  value: string;
+  onChange: (value: string) => void;
   lang: LangCode;
 }) {
   return (
     <Field label={label}>
-      <select name={name} defaultValue={value ?? ''} className={INPUT}>
+      <select name={name} value={value} onChange={(e) => onChange(e.target.value)} className={INPUT}>
         <option value="" className="text-black">—</option>
         {options.map((o) => (
           <option key={o.id} value={o.id} className="text-black">
