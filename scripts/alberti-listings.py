@@ -32,16 +32,6 @@ DISTRICT = "Autostrada Prishtinë–Ferizaj"
 IMG = "https://autosallonialberti.net/assets/inventory/"
 DEALER = "Auto Salloni Alberti"
 
-# Yakit adlari Arnavutcaya; digerleriyle ayni adlandirma.
-FUEL = {
-    "Diesel": "Diesel",
-    "Gasoline": "Benzin",
-    "Petrol": "Benzin",
-    "Hybrid": "Hibrid",
-    "Electric": "Elektrik",
-    "Plug-in Hybrid": "Hibrid plug-in",
-}
-
 # Model adindan govde tipi. Sitenin BODY alani detay sayfasinda metin icinde
 # geciyor ve guvenilir sekilde ayiklanamadi; model adi bu marka/model
 # kumesinde yeterince ayirt edici.
@@ -50,6 +40,29 @@ SUV = re.compile(
     r"|Discovery|Jimny|Cayenne|Macan|Kodiaq|Karoq|Tucson|Santa Fe|Sportage)\b",
     re.I,
 )
+
+
+# Kaynak adlarindan uygulamanin kimliklerine (src/lib/vehicle.ts).
+# Sitede kunye artik ayri sutunlarda duruyor; aciklamaya yazmak ayni
+# bilgiyi ilan sayfasinda iki kez gostermek demekti.
+FUEL_ID = {
+    "Diesel": "diesel", "Gasoline": "benzin", "Petrol": "benzin",
+    "Hybrid": "hibrid", "Plug-in Hybrid": "hibrid-plug-in",
+    "Electric": "elektrik", "LPG": "gaz",
+}
+TRANS_ID = {
+    "Automatike": "automatik", "Automatic": "automatik",
+    "Manuale": "manual", "Manual": "manual",
+}
+
+
+def sql_null(v):
+    """None -> SQL null, degilse tirnakli dize."""
+    return "null" if v is None else sql_str(v)
+
+
+def sql_num(v):
+    return "null" if v is None else str(int(v))
 
 
 def sql_str(v: str) -> str:
@@ -77,28 +90,35 @@ for c in cars:
     if not photos:
         continue
 
-    detay = [f"Viti: {c['y']}", f"Kilometrazhi: {money(int(c['k']))} km"]
-    if c.get("p"):
-        detay.append(f"Fuqia: {c['p']} PS")
-    detay.append(f"Karburanti: {FUEL.get(c['f'], c['f'])}")
-    if c.get("t"):
-        detay.append(f"Transmisioni: {c['t']}")
-
+    # Aciklamada artik kunye satiri yok. Viti / Kilometrazhi / Fuqia /
+    # Karburanti / Transmisioni kendi sutunlarina yaziliyor; metinde de
+    # birakmak ilan sayfasinda ayni bilgiyi iki kez gosteriyordu
+    # (bir kez teknik bilgiler tablosunda, bir kez aciklamada).
     desc = (
-        "\n".join(detay)
-        + "\n\nAutomjeti ndodhet në Kosovë dhe mund të shihet në vend.\n"
+        "Automjeti ndodhet në Kosovë dhe mund të shihet në vend.\n"
         + f"Adresa: {DISTRICT}, {CITY}.\n\n"
         + f"Automjet i listuar nga {DEALER} — partner i ShesBlej."
     )
 
     arr = "ARRAY[" + ", ".join(sql_str(p) for p in photos) + "]::text[]"
+    # Model adi baslikta marka onekinden sonra gelen kisim.
+    model = title[len(c["b"]):].strip() if title.lower().startswith(c["b"].lower()) else title
     statements.append(
-        "insert into public.listings (owner_id, category, subcategory, title, price, city, district, phone, description, photos, brand) values ("
+        "insert into public.listings (owner_id, category, subcategory, title, price, city,"
+        " district, phone, description, photos, brand, model, year, mileage_km, fuel,"
+        " power_hp, transmission, body_type) values ("
         + ", ".join([
             sql_str(OWNER), sql_str("vasita"), sql_str(sub),
-            sql_str(f"[{DEALER}] {title} ({c['y']})"),
+            sql_str(f"{title} ({c['y']})"),
             str(price), sql_str(CITY), sql_str(DISTRICT), sql_str(PHONE),
             sql_str(desc), arr, sql_str(c["b"]),
+            sql_null(model or None),
+            sql_num(c["y"]),
+            sql_num(c["k"]),
+            sql_null(FUEL_ID.get(c["f"])),
+            sql_num(c.get("p")),
+            sql_null(TRANS_ID.get(c.get("t"))),
+            sql_null("suv" if sub == "arazi-suv" else None),
         ]) + ");"
     )
     summary.append((title, price, len(photos), sub))
