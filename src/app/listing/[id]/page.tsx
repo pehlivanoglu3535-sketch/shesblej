@@ -11,6 +11,7 @@ import MessageForm from './MessageForm';
 import ReportButton from './ReportButton';
 import FavoriteButton from '@/components/FavoriteButton';
 import CategoryIcon from '@/components/CategoryIcon';
+import { getStoreById } from '@/lib/stores';
 
 export default async function ListingDetailPage({ params }: PageProps<'/listing/[id]'>) {
   const { id } = await params;
@@ -23,6 +24,8 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
   const hasPhoto = listing.photos && listing.photos.length > 0;
   const mainPhoto = hasPhoto ? listing.photos[0] : categoryPhotoUri(listing.category);
   const days = daysRemaining(listing.expires_at);
+
+  const store = listing.store_id ? await getStoreById(listing.store_id) : null;
 
   let ownerBusiness: { companyName: string | null } | null = null;
   if (listing.owner_id) {
@@ -78,9 +81,17 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
               {listing.brand}
             </span>
           )}
-          {ownerBusiness && (
+          {store && (
+            <a
+              href={`/store/${store.slug}`}
+              className="inline-block rounded-full bg-[#3f6fb0] px-2.5 py-0.5 text-[11px] font-extrabold text-white hover:bg-[#4b80c9]"
+            >
+              {store.name}
+            </a>
+          )}
+          {!store && ownerBusiness && (
             <span className="inline-block rounded-full bg-[#3f6fb0] px-2.5 py-0.5 text-[11px] font-extrabold text-white">
-              🏢 {ownerBusiness.companyName || t('badge_business_account', lang)}
+              {ownerBusiness.companyName || t('badge_business_account', lang)}
             </span>
           )}
           {listing.is_urgent && (
@@ -145,6 +156,19 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
             </>
           )}
         </div>
+
+        {store && (
+          <a
+            href={`/store/${store.slug}`}
+            className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-glass-border bg-white/4 px-4 py-3 text-sm hover:border-primary/40 hover:bg-white/6"
+          >
+            <span>
+              <strong className="block font-bold">{store.name}</strong>
+              <span className="text-muted">{t('store_see_all', lang)}</span>
+            </span>
+            <span className="text-lg text-primary">›</span>
+          </a>
+        )}
 
         {!isOwner && listing.owner_id && (
           <MessageForm

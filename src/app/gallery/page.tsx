@@ -1,6 +1,9 @@
 import { getLang } from '@/lib/get-lang';
 import { createClient } from '@/lib/supabase/server';
 import GalleryClient, { type BusinessRow } from './GalleryClient';
+import { getStoresWithCounts } from '@/lib/stores';
+import Link from 'next/link';
+import { t } from '@/lib/i18n';
 
 export default async function GalleryPage() {
   const lang = await getLang();
@@ -33,5 +36,38 @@ export default async function GalleryPage() {
     .filter((b) => (realEstateCounts.get(b.id) ?? 0) > 0)
     .map((b) => ({ ...b, listingCount: realEstateCounts.get(b.id) ?? 0 }));
 
-  return <GalleryClient lang={lang} vehicleDealers={vehicleDealers} realEstateCompanies={realEstateCompanies} />;
+  // Partner mağazaları da bu sayfada listeleniyor. Onlar profil değil ayrı bir
+  // kayıt (migration_010), o yüzden ayrı bir bölüm olarak geçiyor — kaydolmuş
+  // bir işletme ile içe aktardığımız partner envanteri aynı şey değil.
+  const stores = await getStoresWithCounts();
+
+  return (
+    <>
+      {stores.length > 0 && (
+        <section className="mx-auto max-w-5xl px-6 pt-10">
+          <h2 className="mb-4 text-lg font-extrabold">{t('stores_title', lang)}</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {stores.map((s) => (
+              <Link
+                key={s.id}
+                href={`/store/${s.slug}`}
+                className="flex items-center gap-3 rounded-xl border border-glass-border bg-surface p-4 hover:border-primary/40"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-2 text-lg font-extrabold text-ink">
+                  {s.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-bold">{s.name}</span>
+                  <span className="block text-xs text-muted">
+                    {s.listingCount} {t('listing_count_suffix', lang)}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+      <GalleryClient lang={lang} vehicleDealers={vehicleDealers} realEstateCompanies={realEstateCompanies} />
+    </>
+  );
 }

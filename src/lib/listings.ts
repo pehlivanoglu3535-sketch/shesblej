@@ -21,6 +21,7 @@ export type Listing = {
   is_highlighted: boolean;
   uses_showcase: boolean;
   brand: string | null;
+  store_id: string | null;
 };
 
 export type ListingFilters = {
@@ -34,6 +35,7 @@ export type ListingFilters = {
   ownerId?: string;
   includeExpired?: boolean;
   brand?: string;
+  storeId?: string;
 };
 
 /** Strip characters that have special meaning in PostgREST filter syntax before
@@ -57,6 +59,7 @@ export async function getListings(filters: ListingFilters = {}): Promise<Listing
   if (filters.city) q = q.eq('city', filters.city);
   if (filters.ownerId) q = q.eq('owner_id', filters.ownerId);
   if (filters.brand) q = q.eq('brand', filters.brand);
+  if (filters.storeId) q = q.eq('store_id', filters.storeId);
   if (filters.minPrice != null) q = q.gte('price', filters.minPrice);
   if (filters.maxPrice != null) q = q.lte('price', filters.maxPrice);
   if (filters.query) {
