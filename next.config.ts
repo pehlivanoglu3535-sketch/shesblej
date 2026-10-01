@@ -14,8 +14,11 @@ const nextConfig: NextConfig = {
       ...(supabaseHost
         ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
         : []),
-      // Encar export listings (official partner inventory) are served from
-      // Encar's own image CDN rather than re-uploaded to our storage.
+      // Partner CDN'leri (Encar, Auto Salloni Alberti) burada kayıtlı ama
+      // görselleri iyileştiriciden GEÇMİYOR — `unoptimized` ile işaretleniyor,
+      // bkz. src/lib/image-source.ts. Yine de kayıtlı olmaları gerekiyor:
+      // yapılandırılmamış bir ana makine `next/image` ile sayfayı 500'e
+      // düşürüyor (ölçüldü), `unoptimized` bunu değiştirmiyor.
       { protocol: "https" as const, hostname: "ci.encar.com", pathname: "/carpicture/**" },
       // Auto Salloni Alberti (partner inventory). Their photos stay on their
       // own CDN rather than being copied here: this store is meant to track

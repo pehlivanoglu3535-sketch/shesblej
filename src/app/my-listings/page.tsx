@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { isPartnerImage } from '@/lib/image-source';
 import { redirect } from 'next/navigation';
 import { getLang } from '@/lib/get-lang';
 import { getCurrentUser } from '@/lib/get-user';
@@ -38,7 +39,7 @@ export default async function MyListingsPage() {
               >
                 <Link href={`/listing/${listing.id}`} className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[#1c1a12]">
                   {hasPhoto ? (
-                    <Image src={listing.photos[0]} alt="" fill sizes="64px" className="object-cover" />
+                    <Image src={listing.photos[0]} alt="" fill sizes="64px" unoptimized={isPartnerImage(listing.photos[0])} className="object-cover" />
                   ) : (
                     <img
                       src={categoryPhotoUri(listing.category)}
