@@ -7,11 +7,19 @@ import { t } from '@/lib/i18n';
 import MessageForm from '@/app/listing/[id]/MessageForm';
 import { markMessagesReadAction } from '@/app/actions/messages';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function MessageThreadPage({ params }: PageProps<'/messages/[listingId]/[otherId]'>) {
   const { listingId, otherId } = await params;
   const lang = await getLang();
   const user = await getCurrentUser();
   if (!user) redirect('/login');
+
+  // `otherId` URL'den geliyor ve asagida PostgREST `.or()` filtre dizesine
+  // gomuluyor. Virgul/parantez gibi karakterler o dizede anlam tasidigi icin
+  // dogrulanmadan gommek filtreyi disaridan degistirmeye aciktir. RLS zarari
+  // kendi mesajlariyla sinirliyordu ama filtreye hic girmemesi daha dogru.
+  if (!UUID_PATTERN.test(otherId)) notFound();
 
   const supabase = await createClient();
 

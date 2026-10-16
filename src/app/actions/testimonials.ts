@@ -37,15 +37,29 @@ export async function submitTestimonialAction(
   return { error: null, submitted: true };
 }
 
-export async function approveTestimonialAction(id: string, approved: boolean) {
+/** Moderasyon islemleri icin yonetici kontrolu. Veritabani tarafinda da
+ *  `is_admin()` sarti var; bu, tek katmanda kalmamak icin. */
+async function requireAdmin() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+  return profile?.is_admin ? supabase : null;
+}
+
+export async function approveTestimonialAction(id: string, approved: boolean) {
+  const supabase = await requireAdmin();
+  if (!supabase) return;
   await supabase.from('testimonials').update({ approved }).eq('id', id);
   revalidatePath('/admin');
   revalidatePath('/');
 }
 
 export async function deleteTestimonialAction(id: string) {
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
+  if (!supabase) return;
   await supabase.from('testimonials').delete().eq('id', id);
   revalidatePath('/admin');
   revalidatePath('/');

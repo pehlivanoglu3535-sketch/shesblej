@@ -55,6 +55,20 @@ export async function createBlogPostAction(_prev: BlogPostState, formData: FormD
 
 export async function deleteBlogPostAction(id: string) {
   const supabase = await createClient();
+
+  // Yetki kontrolu burada da yapiliyor. Veritabani tarafinda zaten
+  // `is_admin()` istiyor, yani bu olmadan da somurulemezdi -- ama tek
+  // savunma katmani birakmak ve islemi sessizce "basarili" gostermek
+  // dogru degil: yonetici olmayan biri icin silme hicbir sey yapmadan
+  // yonlendiriyordu.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+  if (!profile?.is_admin) redirect('/');
+
   await supabase.from('blog_posts').delete().eq('id', id);
   revalidatePath('/blog');
   redirect('/admin/blog');

@@ -39,7 +39,8 @@ export async function registerAction(
   if (!isValidEmail(email)) {
     return { error: t('toast_invalid_email', lang) };
   }
-  if (password.length < 6) {
+  // Alt sinir 6'ydi. Sekiz karakter, kaba kuvvete karsi anlamli ilk esik.
+  if (password.length < 8) {
     return { error: t('toast_password_short', lang) };
   }
   if (password !== passwordConfirm) {
@@ -66,7 +67,12 @@ export async function registerAction(
         },
       },
     });
-    if (error) return { error: error.message };
+    // Supabase'in ham mesajini gostermek "User already registered" gibi
+    // yanitlarla bir e-postanin kayitli olup olmadigini disariya soyluyordu.
+    if (error) {
+      console.error('registerAction failed:', error.message);
+      return { error: t('error_generic', lang) };
+    }
     return { error: null, success: true };
   } catch (err) {
     console.error('registerAction failed:', err);

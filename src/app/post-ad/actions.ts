@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { t, type LangCode } from '@/lib/i18n';
 import { CATEGORIES, MAX_PHOTOS, type CategoryId } from '@/lib/constants';
-import { listingLimit, showcaseLimit, type PlanProfile } from '@/lib/plan';
+import { listingLimit, type PlanProfile } from '@/lib/plan';
 import {
   ALL_FEATURE_IDS,
   BODY_TYPES,
@@ -164,19 +164,9 @@ export async function createListingAction(
     photos = [];
   }
 
-  const { count: showcaseCount } = wantsShowcase
-    ? await supabase
-        .from('listings')
-        .select('id', { count: 'exact', head: true })
-        .eq('owner_id', user.id)
-        .eq('uses_showcase', true)
-        .gt('expires_at', new Date().toISOString())
-    : { count: 0 };
-
-  const useUrgent = wantsUrgent && (profileRow?.credit_urgent_tag ?? 0) > 0;
-  const useHighlight = wantsHighlight && (profileRow?.credit_highlight ?? 0) > 0;
-  const useShowcase = wantsShowcase && (showcaseCount ?? 0) < showcaseLimit(profile);
-
+  // Rozetler ve krediler artık insert yükünde yok: o sütunlar veritabanında
+  // kullanıcıya kapalı (migration_016). Aksi halde ödeme yapmadan doğrudan
+  // PostgREST'e `is_highlighted: true` göndermek yeterliydi.
   const { data, error } = await supabase
     .from('listings')
     .insert({
@@ -194,9 +184,6 @@ export async function createListingAction(
       photos,
       brand: category === 'vasita' && brand ? brand : null,
       ...vehicleFields(formData, category),
-      is_urgent: useUrgent,
-      is_highlighted: useHighlight,
-      uses_showcase: useShowcase,
     })
     .select('id')
     .single();
@@ -206,17 +193,19 @@ export async function createListingAction(
     return { error: t('error_generic', lang) };
   }
 
-  if (useUrgent) {
-    await supabase
-      .from('profiles')
-      .update({ credit_urgent_tag: Math.max(0, (profileRow?.credit_urgent_tag ?? 0) - 1) })
-      .eq('id', user.id);
-  }
-  if (useHighlight) {
-    await supabase
-      .from('profiles')
-      .update({ credit_highlight: Math.max(0, (profileRow?.credit_highlight ?? 0) - 1) })
-      .eq('id', user.id);
+  // Krediyi düşürüp rozeti açmak tek bir işlemde, veritabanı tarafında
+  // oluyor. Eskiden "önce oku, sonra yaz" biçimindeydi: iki ilan aynı anda
+  // açılırsa aynı kredi iki kez harcanabiliyordu.
+  if (wantsUrgent || wantsHighlight || wantsShowcase) {
+    const { error: badgeError } = await supabase.rpc('claim_listing_badges', {
+      p_listing_id: data.id,
+      p_urgent: wantsUrgent,
+      p_highlight: wantsHighlight,
+      p_showcase: wantsShowcase,
+    });
+    // Rozet açılamazsa ilan yine de yayında kalıyor; kullanıcıyı ilanını
+    // kaybetmiş gibi hissettirmek, rozetsiz bırakmaktan daha kötü.
+    if (badgeError) console.error('claim_listing_badges failed:', badgeError.message);
   }
 
   redirect(`/listing/${data.id}`);

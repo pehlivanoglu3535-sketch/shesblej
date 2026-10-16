@@ -41,6 +41,39 @@ export async function sendMessageAction(
   if (!text) return { error: t('toast_msg_empty', lang) };
   if (text.length > 2000) return { error: t('error_generic', lang) };
 
+  /**
+   * Alıcı ve ilan doğrulanıyor.
+   *
+   * Önceden ikisi de çağrının verdiği değerler olarak doğrudan kaydediliyordu
+   * ve RLS yalnızca "gönderen gerçekten sen misin" diye bakıyordu. Yani giriş
+   * yapmış biri, istediği kullanıcıya, istediği ilan üzerinden mesaj
+   * atabiliyordu — üstelik `profiles_public` bütün kullanıcı kimliklerini
+   * listelediği için alıcıları bulmak da zahmetsizdi. Tek fren 15 saniyelik
+   * hız sınırıydı; toplu taciz için yeterli değil.
+   *
+   * Kural: alıcı ya ilanın sahibi olmalı (alıcıdan satıcıya ilk mesaj), ya da
+   * o ilan üzerinde zaten yazışıyor olmalısınız (satıcının cevabı).
+   */
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('owner_id')
+    .eq('id', listingId)
+    .maybeSingle();
+
+  if (!listing) return { error: t('error_generic', lang) };
+  if (receiverId === user.id) return { error: t('error_generic', lang) };
+
+  if (listing.owner_id !== receiverId) {
+    const { count: threadCount } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('listing_id', listingId)
+      .eq('sender_id', receiverId)
+      .eq('receiver_id', user.id);
+
+    if (!threadCount) return { error: t('error_generic', lang) };
+  }
+
   const { data: recent } = await supabase
     .from('messages')
     .select('created_at')

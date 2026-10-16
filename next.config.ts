@@ -31,6 +31,59 @@ const nextConfig: NextConfig = {
     // costs Supabase one fetch, not one per visitor.
     minimumCacheTTL: 2678400,
   },
+
+  // Çerçeveyi ve sürümünü dışarı duyurmanın kimseye faydası yok.
+  poweredByHeader: false,
+
+  /**
+   * Güvenlik başlıkları.
+   *
+   * Denetimde sitede HSTS dışında hiçbir güvenlik başlığı yoktu; HSTS'i de
+   * Vercel kendiliğinden ekliyor. Buradakiler tarayıcıya "bu sayfa nasıl
+   * davranmalı" diye söylüyor.
+   *
+   * CSP'de bilinçli olarak `script-src` KISITLANMIYOR. Next.js'in satır içi
+   * önyükleme betikleri nonce ister; nonce'suz sıkı bir `script-src`
+   * yazmak siteyi ilk istekte bozar. Onun yerine saldırı yüzeyini gerçekten
+   * daraltan ve yanlış yapılandırma riski olmayan yönergeler var:
+   * `frame-ancestors` (clickjacking), `object-src` (eklenti tabanlı XSS),
+   * `base-uri` (enjekte edilen <base> ile göreli yolların kaçırılması) ve
+   * `form-action` (form gönderiminin başka siteye yönlendirilmesi).
+   * Nonce tabanlı tam CSP ayrı bir iş.
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            // Site bunların hiçbirini kullanmıyor; kullanmayan bir sayfanın
+            // izin istememesi gerekir.
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            // `default-src` bilerek YOK: yazılsaydı script, stil, görsel,
+            // yazı tipi ve fetch'in hepsini aynı anda kısıtlar ve Supabase
+            // çağrıları, partner CDN görselleri ve analitik betikleri ilk
+            // istekte kesilirdi. Yalnızca kendi başına güvenli olan
+            // yönergeler yazılıyor.
+            value: [
+              "frame-ancestors 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "upgrade-insecure-requests",
+            ].join("; "),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
