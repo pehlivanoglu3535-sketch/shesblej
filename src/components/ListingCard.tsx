@@ -17,7 +17,8 @@ export default function ListingCard({ listing, lang }: { listing: Listing; lang:
       <div className="relative h-[154px] overflow-hidden bg-[#1c1a12]">
         {hasPhoto ? (
           <ListingCardPhoto
-            photos={listing.photos}
+            preview={listing.photos.slice(0, 4)}
+            total={listing.photos.length}
             alt={listing.title}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
           />

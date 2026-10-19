@@ -24,15 +24,20 @@ import { isPartnerImage, partnerThumb } from '@/lib/image-source';
  * dokunmatik cihazda `hover` zaten tetiklenmiyor.
  */
 export default function ListingCardPhoto({
-  photos,
+  preview,
+  total,
   alt,
   sizes,
 }: {
-  photos: string[];
+  /** Yalnız gösterilecek kareler. Sunucu tüm diziyi göndermiyor: 86 kartlı
+   *  ana sayfada ilan başına 19 fotoğraf yolu, hiç kullanılmayacak yüzlerce
+   *  satırı her istekte tele veriyordu. */
+  preview: string[];
+  /** Rozetteki sayı için ilanın gerçek fotoğraf adedi. */
+  total: number;
   alt: string;
   sizes: string;
 }) {
-  const preview = photos.slice(0, 4);
   const [index, setIndex] = useState(0);
   const [warm, setWarm] = useState(false);
 
@@ -80,7 +85,7 @@ export default function ListingCardPhoto({
         )
       ))}
 
-      {photos.length > 1 && (
+      {total > 1 && (
         <span
           className="pointer-events-none absolute right-2.5 bottom-2.5 flex items-center gap-1 rounded-lg border border-glass-border px-2 py-0.5 text-[10px] font-bold text-[#d6d1c4] backdrop-blur-sm"
           style={{ background: 'rgba(10,10,8,.72)' }}
@@ -89,7 +94,7 @@ export default function ListingCardPhoto({
             <rect x="3" y="5" width="18" height="14" rx="2" />
             <circle cx="12" cy="12" r="3.2" />
           </svg>
-          {photos.length}
+          {total}
         </span>
       )}
 
