@@ -1,10 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { categoryPhotoUri, listingHue } from '@/lib/photos';
 import { daysRemaining, type Listing } from '@/lib/listings';
 import { t, type LangCode } from '@/lib/i18n';
 import CategoryIcon from '@/components/CategoryIcon';
-import { isPartnerImage } from '@/lib/image-source';
+import ListingCardPhoto from '@/components/ListingCardPhoto';
 
 export default function ListingCard({ listing, lang }: { listing: Listing; lang: LangCode }) {
   const hasPhoto = listing.photos && listing.photos.length > 0;
@@ -17,13 +16,10 @@ export default function ListingCard({ listing, lang }: { listing: Listing; lang:
     >
       <div className="relative h-[154px] overflow-hidden bg-[#1c1a12]">
         {hasPhoto ? (
-          <Image
-            src={listing.photos[0]}
-            alt=""
-            fill
+          <ListingCardPhoto
+            photos={listing.photos}
+            alt={listing.title}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-            unoptimized={isPartnerImage(listing.photos[0])}
-            className="object-cover transition duration-300 group-hover:scale-[1.08]"
           />
         ) : (
           // Placeholders are inline SVG data URIs — nothing to fetch or optimize.

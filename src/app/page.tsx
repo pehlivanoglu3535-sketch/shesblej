@@ -6,6 +6,7 @@ import Hero from '@/components/Hero';
 import Filters from '@/components/Filters';
 import ListingCard from '@/components/ListingCard';
 import TestimonialsSection from '@/components/TestimonialsSection';
+import StatsBar from '@/components/StatsBar';
 
 function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -71,7 +72,13 @@ export default async function HomePage({ searchParams }: PageProps<'/'>) {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-7">
-      {!category && !query && <Hero lang={lang} />}
+      {!category && !query && (
+        <>
+          <Hero lang={lang} />
+          {/* Bu bilesen yazilmis ama hicbir yere konmamisti. */}
+          <StatsBar lang={lang} />
+        </>
+      )}
 
       <Filters lang={lang} category={category} />
 
