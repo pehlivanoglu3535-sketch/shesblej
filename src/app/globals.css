@@ -108,12 +108,10 @@ body {
 
 .sb-aurora {
   animation: sb-aurora 18s ease-in-out infinite;
-  will-change: transform;
 }
 /* İkinci ışık aynı anda aynı yerde olmasın diye gecikmeli ve yavaş. */
 .sb-aurora-2 {
   animation: sb-aurora 24s ease-in-out -8s infinite reverse;
-  will-change: transform;
 }
 
 .sb-rise {

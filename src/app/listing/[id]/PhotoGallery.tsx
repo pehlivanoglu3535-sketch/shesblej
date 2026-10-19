@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { isPartnerImage } from '@/lib/image-source';
+import { isPartnerImage, partnerThumb } from '@/lib/image-source';
 
 /**
  * İlan fotoğraf galerisi.
@@ -38,7 +38,9 @@ export default function PhotoGallery({ photos, title }: { photos: string[]; titl
       <div className="relative h-[260px] overflow-hidden rounded-lg bg-[#1c1a12] sm:h-[340px]">
         <Image
           key={photos[index]}
-          src={photos[index]}
+          /* Kutu en fazla 672 piksel; 1600 piksellik kareyi indirmek
+             bellekte dort kat yer tutuyordu. */
+          src={partnerThumb(photos[index], 960)}
           alt={title}
           fill
           sizes="(max-width: 768px) 100vw, 672px"
@@ -89,7 +91,7 @@ export default function PhotoGallery({ photos, title }: { photos: string[]; titl
                 i === index ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <Image src={p} alt="" fill sizes="56px" unoptimized={isPartnerImage(p)} className="object-cover" />
+              <Image src={partnerThumb(p)} alt="" fill sizes="56px" unoptimized={isPartnerImage(p)} className="object-cover" />
             </button>
           ))}
         </div>

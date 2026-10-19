@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { isPartnerImage } from '@/lib/image-source';
+import { isPartnerImage, partnerThumb } from '@/lib/image-source';
 
 /**
  * Kart görseli: üstüne gelince ilanın diğer fotoğraflarını gösteriyor.
@@ -39,8 +39,15 @@ export default function ListingCardPhoto({
   function enter() {
     setWarm(true);
   }
+  /**
+   * Fare çıkınca önizleme kareleri DOM'dan da kalkıyor, sadece ilk kare
+   * kalıyor. İlk sürümde yalnız `index` sıfırlanıyordu: kareler asılı
+   * kalıyor, bitmap'leri bellekte duruyordu. Izgarada gezen kullanıcı
+   * farkında olmadan yüzlerce megabayt biriktiriyor ve sekme çöküyordu.
+   */
   function leave() {
     setIndex(0);
+    setWarm(false);
   }
   /** Görselin üstünde yatay konum hangi fotoğrafa denk geliyorsa onu göster
    *  — şeridi otomatik oynatmak yerine kullanıcıya bırakmak, fareyi
@@ -61,7 +68,7 @@ export default function ListingCardPhoto({
         (i === 0 || warm) && (
           <Image
             key={src}
-            src={src}
+            src={partnerThumb(src)}
             alt={i === 0 ? alt : ''}
             fill
             sizes={sizes}

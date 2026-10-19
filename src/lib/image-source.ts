@@ -24,3 +24,29 @@ const PARTNER_IMAGE_HOSTS = ['autoalberti.com', 'autosallonialberti.net', 'ci.en
 export function isPartnerImage(src: string): boolean {
   return PARTNER_IMAGE_HOSTS.some((host) => src.includes(host));
 }
+
+/**
+ * Partner görselinin küçük varyantını verir.
+ *
+ * NEDEN GEREKİYOR
+ * İlan kartı 228 piksel genişliğinde ama veritabanındaki yollar 1600
+ * pikselli kareyi gösteriyor ve partner görselleri iyileştiriciden
+ * geçmediği için tarayıcı o 1600 pikseli olduğu gibi indirip çözüyor.
+ * Bir kare diskte 69 KB, ama bellekte çözülmüş hâli 1600x1067x4 ≈ 6,8 MB.
+ *
+ * Ölçüldü: ana sayfada yalnız sekiz kartın üzerinden geçmek 291 MB
+ * çözülmüş bitmap yapıyordu. 86 kartlık bir ızgarada fareyi gezdirmek
+ * sekmeyi öldürüyor ve Chrome "Hay aksi!" ekranını gösteriyordu.
+ *
+ * Bayinin CDN'i aynı kareyi 480 ve 960 piksel olarak da yayınlıyor
+ * (hepsi kontrol edildi, her indeks için mevcut). 480 piksel, 228
+ * piksellik bir kutuya iki kat yoğunlukta ekranda bile yetiyor ve
+ * bellekte ~0,6 MB tutuyor — on kat daha az.
+ *
+ * Encar görsellerine dokunulmuyor: onların CDN'i zaten `impolicy`
+ * parametresiyle 640 piksel veriyor (28 KB).
+ */
+export function partnerThumb(src: string, width: 480 | 960 = 480): string {
+  if (!/autoalberti\.com|autosallonialberti\.net/.test(src)) return src;
+  return src.replace(/\.(480|960|1600)\.webp$/, `.${width}.webp`);
+}
