@@ -19,7 +19,7 @@
  * devam ediyor: onlar telefon kamerasından geliyor, 4-5 MB olabiliyor ve
  * küçültülmezse hem sayfa ağırlaşıyor hem Supabase çıkış kotası eriyor.
  */
-const PARTNER_IMAGE_HOSTS = ['autosallonialberti.net', 'ci.encar.com'];
+const PARTNER_IMAGE_HOSTS = ['autoalberti.com', 'autosallonialberti.net', 'ci.encar.com'];
 
 export function isPartnerImage(src: string): boolean {
   return PARTNER_IMAGE_HOSTS.some((host) => src.includes(host));

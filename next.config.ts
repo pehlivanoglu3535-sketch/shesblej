@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
       // their stock, so a picture they replace should change here too. The
       // RE/MAX import went the other way — those listings were a one-off
       // snapshot, and surviving a deletion on their side was worth more.
+      // Alberti 19.10.2026'da autosallonialberti.net -> autoalberti.com'a
+      // tasindi. Eski alan adi 301 ile yonlendiriyor ve mevcut 55 ilanin
+      // fotograflari oradan geliyor, bu yuzden ikisi de kayitli duruyor.
+      { protocol: "https" as const, hostname: "autoalberti.com", pathname: "/assets/inventory/**" },
       { protocol: "https" as const, hostname: "autosallonialberti.net", pathname: "/assets/inventory/**" },
     ],
     // Keep optimized copies at the edge for a month so a popular listing
