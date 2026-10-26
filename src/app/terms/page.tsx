@@ -1,4 +1,5 @@
 import { getLang } from '@/lib/get-lang';
+import { renderMarkdownLite } from '@/lib/markdown-lite';
 
 const SQ = `
 ## Kushtet e Përdorimit
@@ -89,49 +90,6 @@ These terms are governed by the laws of the Republic of Kosovo.
 ### 12. Contact
 For questions about these terms, please contact us through the platform.
 `;
-
-function renderMarkdownLite(text: string) {
-  return text
-    .trim()
-    .split('\n\n')
-    .map((block, i) => {
-      if (block.startsWith('## ')) {
-        return (
-          <h1 key={i} className="mb-4 text-2xl font-extrabold">
-            {block.replace('## ', '')}
-          </h1>
-        );
-      }
-      if (block.startsWith('### ')) {
-        return (
-          <h2 key={i} className="mt-6 mb-2 text-lg font-bold">
-            {block.replace('### ', '')}
-          </h2>
-        );
-      }
-      if (block.startsWith('- ')) {
-        return (
-          <ul key={i} className="mb-2 list-disc space-y-1 pl-5 text-sm text-[#cbc6ba]">
-            {block.split('\n').map((line, j) => (
-              <li key={j}>{line.replace(/^- /, '')}</li>
-            ))}
-          </ul>
-        );
-      }
-      if (block.startsWith('**')) {
-        return (
-          <p key={i} className="mb-2 text-sm text-muted">
-            {block.replace(/\*\*/g, '')}
-          </p>
-        );
-      }
-      return (
-        <p key={i} className="mb-2 text-sm leading-relaxed text-[#cbc6ba]">
-          {block}
-        </p>
-      );
-    });
-}
 
 export default async function TermsPage() {
   const lang = await getLang();

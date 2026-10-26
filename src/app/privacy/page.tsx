@@ -1,4 +1,5 @@
 import { getLang } from '@/lib/get-lang';
+import { renderMarkdownLite } from '@/lib/markdown-lite';
 
 const SQ = `
 ## Politika e Privatësisë
@@ -6,10 +7,18 @@ const SQ = `
 **Përditësuar së fundmi:** ${new Date().toISOString().slice(0, 10)}
 
 ### 1. Cilat të dhëna mbledhim
-Kur regjistroheni, mbledhim: emrin, email-in, numrin e telefonit, numrin e ID-së, datëlindjen, dhe llojin e llogarisë (individuale/biznes). Kur postoni një shpallje, mbledhim detajet e shpalljes dhe fotot që ngarkoni. Kur dërgoni mesazhe, ruajmë përmbajtjen e mesazheve mes jush dhe përdoruesve të tjerë.
+Kjo politikë vlen si për faqen shesblejks.com ashtu edhe për aplikacionin celular ShesBlej.
 
-### 2. Pse mbledhim numrin e ID-së dhe datëlindjen
-Këto të dhëna mblidhen me pëlqimin tuaj eksplicit gjatë regjistrimit, me qëllim identifikimin e përdoruesve në rast dyshimi për mashtrim ose keqpërdorim të platformës. Ato **nuk shfaqen publikisht** dhe nuk u shiten palëve të treta. Vetëm administratorët e platformës kanë qasje në to, dhe vetëm për hetimin e rasteve të raportuara.
+Kur regjistroheni, mbledhim: emrin, email-in, numrin e telefonit dhe llojin e llogarisë (individuale/biznes, me emrin e kompanisë nëse zgjidhni biznes). Kur postoni një shpallje, mbledhim detajet e shpalljes dhe fotot që ngarkoni. Kur dërgoni mesazhe, ruajmë përmbajtjen e mesazheve mes jush dhe përdoruesve të tjerë.
+
+Në aplikacionin celular mbledhim gjithashtu:
+
+- **Lokacionin e saktë** — vetëm kur shënoni në hartë vendndodhjen e një shpalljeje prone, dhe vetëm pasi jepni lejen. Ruhet si pjesë e shpalljes, jo si gjurmë lëvizjeje.
+- **Fotografitë** që zgjidhni ose bëni me kamerë, vetëm ato që i bashkëngjitni një shpalljeje.
+- **Një identifikues njoftimesh të pajisjes** (token-i i njoftimeve push), vetëm nëse i aktivizoni njoftimet, për t'ju lajmëruar kur merrni mesazh.
+
+### 2. Çfarë NUK mbledhim
+Nuk mbledhim numrin e letërnjoftimit, datëlindjen, të dhëna pagese, kontaktet tuaja, as historikun e shfletimit. Nuk përdorim gjurmues reklamash dhe nuk ndërtojmë profile reklamimi.
 
 ### 3. Si i ruajmë të dhënat
 Të dhënat ruhen në një bazë të dhënash të sigurt (Supabase/PostgreSQL) me kontrolle qasjeje në nivel rreshti (Row Level Security) — çdo përdorues sheh vetëm të dhënat e veta, përveç administratorëve për qëllime hetimi.
@@ -17,11 +26,18 @@ Të dhënat ruhen në një bazë të dhënash të sigurt (Supabase/PostgreSQL) m
 ### 4. Me kë i ndajmë të dhënat
 Nuk i shesim as nuk i ndajmë të dhënat tuaja personale me palë të treta për qëllime marketingu. Ofruesi ynë i infrastrukturës (Supabase) përpunon të dhënat në emrin tonë sipas kushteve të tyre të përpunimit të të dhënave.
 
-### 5. Të drejtat tuaja
-Keni të drejtë të kërkoni qasje, korrigjim, ose fshirje të të dhënave tuaja personale. Për ta bërë këtë, na kontaktoni përmes platformës ose fshini llogarinë tuaj drejtpërdrejt.
+### 5. Të drejtat tuaja dhe fshirja e llogarisë
+Keni të drejtë të kërkoni qasje, korrigjim ose fshirje të të dhënave tuaja personale.
+
+Llogarinë mund ta fshini vetë në çdo kohë:
+
+- **Në aplikacion:** Profili → Fshi llogarinë.
+- **Në ueb:** përmes faqes [shesblejks.com/account-deletion](https://shesblejks.com/account-deletion), ose duke na shkruar në info@shesblejks.com.
+
+Fshirja heq përgjithmonë llogarinë, shpalljet tuaja dhe fotot e tyre. Mesazhet që u keni dërguar të tjerëve mund të mbeten te marrësi, njësoj si një mesazh i dërguar.
 
 ### 6. Ruajtja e të dhënave
-Të dhënat e llogarisë ruhen për sa kohë llogaria juaj është aktive. Shpalljet fshihen automatikisht 29 ditë pas postimit nëse nuk rinovohen.
+Të dhënat e llogarisë ruhen për sa kohë llogaria juaj është aktive. Shpalljet skadojnë automatikisht 29 ditë pas postimit nëse nuk rinovohen. Pas fshirjes së llogarisë, të dhënat hiqen nga sistemet tona brenda 30 ditëve.
 
 ### 7. Cookies
 Përdorim cookies thelbësore për mirëmbajtjen e sesionit tuaj të kyçjes. Nuk përdorim cookies gjurmuese për reklama.
@@ -45,10 +61,18 @@ const EN = `
 **Last updated:** ${new Date().toISOString().slice(0, 10)}
 
 ### 1. What data we collect
-When you register, we collect: your name, email, phone number, ID number, date of birth, and account type (individual/business). When you post a listing, we collect the listing details and photos you upload. When you send messages, we store the content of messages between you and other users.
+This policy covers both the shesblejks.com website and the ShesBlej mobile app.
 
-### 2. Why we collect your ID number and date of birth
-This data is collected with your explicit consent during registration, for the purpose of identifying users in case of suspected fraud or platform misuse. It is **never displayed publicly** and is not sold to third parties. Only platform administrators have access to it, and only for investigating reported cases.
+When you register, we collect: your name, email, phone number and account type (individual/business, with a company name if you choose business). When you post a listing, we collect the listing details and photos you upload. When you send messages, we store the content of messages between you and other users.
+
+In the mobile app we also collect:
+
+- **Precise location** — only when you mark a property listing's position on the map, and only after you grant permission. It is stored as part of that listing, not as a movement trail.
+- **Photos** you pick or take with the camera, only those you attach to a listing.
+- **A device notification identifier** (push token), only if you enable notifications, so we can alert you when a message arrives.
+
+### 2. What we do NOT collect
+We do not collect ID numbers, dates of birth, payment data, your contacts, or your browsing history. We use no advertising trackers and build no advertising profiles.
 
 ### 3. How we store data
 Data is stored in a secure database (Supabase/PostgreSQL) with row-level access controls — each user only sees their own data, except administrators for investigation purposes.
@@ -56,11 +80,18 @@ Data is stored in a secure database (Supabase/PostgreSQL) with row-level access 
 ### 4. Who we share data with
 We do not sell or share your personal data with third parties for marketing purposes. Our infrastructure provider (Supabase) processes data on our behalf under their data processing terms.
 
-### 5. Your rights
-You have the right to request access to, correction of, or deletion of your personal data. To do so, contact us through the platform or delete your account directly.
+### 5. Your rights and account deletion
+You have the right to request access to, correction of, or deletion of your personal data.
+
+You can delete your account yourself at any time:
+
+- **In the app:** Account → Delete account.
+- **On the web:** through [shesblejks.com/account-deletion](https://shesblejks.com/account-deletion), or by writing to info@shesblejks.com.
+
+Deletion permanently removes your account, your listings and their photos. Messages you sent to other people may remain with the recipient, the same way a sent message does.
 
 ### 6. Data retention
-Account data is retained for as long as your account is active. Listings are automatically deleted 29 days after posting if not renewed.
+Account data is retained for as long as your account is active. Listings expire automatically 29 days after posting if not renewed. After account deletion, data is removed from our systems within 30 days.
 
 ### 7. Cookies
 We use essential cookies to maintain your login session. We do not use tracking cookies for advertising.
@@ -77,40 +108,6 @@ We may update this policy from time to time. Significant changes will be communi
 ### 11. Contact
 For privacy questions or to exercise your rights, please contact us through the platform.
 `;
-
-function renderMarkdownLite(text: string) {
-  return text
-    .trim()
-    .split('\n\n')
-    .map((block, i) => {
-      if (block.startsWith('## ')) {
-        return (
-          <h1 key={i} className="mb-4 text-2xl font-extrabold">
-            {block.replace('## ', '')}
-          </h1>
-        );
-      }
-      if (block.startsWith('### ')) {
-        return (
-          <h2 key={i} className="mt-6 mb-2 text-lg font-bold">
-            {block.replace('### ', '')}
-          </h2>
-        );
-      }
-      if (block.startsWith('**')) {
-        return (
-          <p key={i} className="mb-2 text-sm text-muted">
-            {block.replace(/\*\*/g, '')}
-          </p>
-        );
-      }
-      return (
-        <p key={i} className="mb-2 text-sm leading-relaxed text-[#cbc6ba]">
-          {block.split('**').map((part, j) => (j % 2 === 1 ? <strong key={j}>{part}</strong> : part))}
-        </p>
-      );
-    });
-}
 
 export default async function PrivacyPage() {
   const lang = await getLang();
