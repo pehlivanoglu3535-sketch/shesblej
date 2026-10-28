@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { getSiteUrl } from '@/lib/site';
+import { CATEGORY_SLUGS, CITY_SLUGS, categoryPath, cityPath } from '@/lib/taxonomy';
 
 /**
  * /sitemap.xml
@@ -127,5 +128,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     storeEntries(),
   ]);
 
-  return [...staticEntries, ...stores, ...posts, ...listings];
+  // Kategori ve şehir sayfaları: yerel aramaların ana giriş kapısı, bu yüzden
+  // ilan listesinden hemen sonra geliyorlar.
+  const taxonomyEntries: Entry[] = [
+    ...CATEGORY_SLUGS.map((slug) => ({
+      url: `${SITE_URL}${categoryPath(slug)}`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    })),
+    ...CITY_SLUGS.map((entry) => ({
+      url: `${SITE_URL}${cityPath(entry.city)}`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    })),
+  ];
+
+  return [...staticEntries, ...taxonomyEntries, ...stores, ...posts, ...listings];
 }
