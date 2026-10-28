@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getLang } from '@/lib/get-lang';
@@ -18,6 +19,102 @@ import VehicleSpecTable from '@/components/VehicleSpecTable';
 import VehicleFeatures from '@/components/VehicleFeatures';
 import { getStoreById } from '@/lib/stores';
 import { formatKm, fuelLabel, transmissionLabel } from '@/lib/vehicle';
+import { getSiteUrl } from '@/lib/site';
+
+const SITE_URL = getSiteUrl();
+
+/**
+ * İlan başına başlık, açıklama ve paylaşım görseli.
+ *
+ * Önceden site genelindeki "ShesBlej" başlığı tüm ilanlarda aynı görünüyordu:
+ * yüzlerce sayfa arama sonuçlarında birbirinden ayırt edilemiyordu. Burada
+ * başlık "ilan başlığı + fiyat + şehir" olarak kuruluyor, çünkü kullanıcılar
+ * arama sonucunda tam olarak bu üçlüyü arıyor.
+ */
+export async function generateMetadata({ params }: PageProps<'/listing/[id]'>): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await getListingById(id);
+
+  if (!listing) {
+    return { title: 'İlan bulunamadı', robots: { index: false, follow: true } };
+  }
+
+  const price = `€${Number(listing.price).toLocaleString('de-DE')}`;
+  const title = `${listing.title} — ${price} · ${listing.city}`;
+  const fallback = `${listing.title} — ${price}, ${listing.city}${
+    listing.district ? ` (${listing.district})` : ''
+  }. ShesBlej'de Kosova'nın ilan platformunda. Satıcıyla doğrudan iletişime geçin.`;
+  const description = listing.description?.trim()
+    ? listing.description.trim().replace(/\s+/g, ' ').slice(0, 300)
+    : fallback;
+
+  const photos = listing.photos ?? [];
+  const images = photos.length > 0 ? photos.slice(0, 4) : ['/og-default.png'];
+
+  // Süresi dolmuş ilanlar sayfada kalıyor (ilan sahibi yenileyebilsin diye)
+  // ama arama sonuçlarında yer almamalı: fiyatı ve stoğu güncel değil.
+  const expired = new Date(listing.expires_at).getTime() < Date.now();
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/listing/${listing.id}` },
+    robots: expired ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      url: `/listing/${listing.id}`,
+      images,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images,
+    },
+  };
+}
+
+/**
+ * İlan yapısal verisi (schema.org). Google'ın zengin sonuçlarında fiyat ve
+ * stok bilgisinin görünmesini sağlar. Ürün adı olarak satıcının başlığı
+ * kullanılıyor; marka/model varsa marka alanı da dolduruluyor.
+ */
+function listingJsonLd(listing: Awaited<ReturnType<typeof getListingById>>, siteUrl: string) {
+  if (!listing) return null;
+  const url = `${siteUrl}/listing/${listing.id}`;
+  const photos = (listing.photos ?? []).slice(0, 6);
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    description: (listing.description ?? '').slice(0, 500) || listing.title,
+    ...(photos.length > 0 ? { image: photos } : {}),
+    ...(listing.brand ? { brand: { '@type': 'Brand', name: listing.brand } } : {}),
+    ...(listing.category === 'vasita'
+      ? {
+          additionalProperty: [
+            listing.year != null ? { '@type': 'PropertyValue', name: 'Yıl', value: listing.year } : null,
+            listing.mileage_km != null ? { '@type': 'PropertyValue', name: 'Kilometre', value: listing.mileage_km } : null,
+            listing.fuel ? { '@type': 'PropertyValue', name: 'Yakıt', value: listing.fuel } : null,
+            listing.transmission ? { '@type': 'PropertyValue', name: 'Vites', value: listing.transmission } : null,
+          ].filter(Boolean),
+        }
+      : {}),
+    offers: {
+      '@type': 'Offer',
+      url,
+      price: Number(listing.price),
+      priceCurrency: 'EUR',
+      availability: 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/UsedCondition',
+      areaServed: { '@type': 'City', name: listing.city },
+      seller: { '@type': 'Organization', name: 'ShesBlej ilan sahibi' },
+    },
+  };
+}
 
 /**
  * Araç ilanının başlığı iki kademeli.
@@ -88,6 +185,14 @@ export default async function ListingDetailPage({ params }: PageProps<'/listing/
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
+      {/* Yapısal veri: Google'a bu sayfanın fiyatı olan ikinci el bir ürün
+          olduğunu söyler; zengin sonuçlarda fiyatın görünmesini sağlar. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(listingJsonLd(listing, SITE_URL)).replace(/</g, '\\u003c'),
+        }}
+      />
       <nav className="mb-3 text-xs text-muted">
         <Link href="/" className="hover:text-primary">
           ShesBlej
